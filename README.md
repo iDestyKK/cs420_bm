@@ -5,7 +5,7 @@ COSC 420, 427, and 527 focus on *biologically-inspired computation*, including r
 
 ## Projects
 ```diff
-- **Project 1** - 1D Cellular Automata (WIP)
++ **Project 1** - 1D Cellular Automata (Done!)
 - **Project 2** - Activation/Inhibition Cellular Automaton (N/A)
 - **Project 3** - Hopfield Net (N/A)
 - **Project 4** - Backpropagation (N/A)
