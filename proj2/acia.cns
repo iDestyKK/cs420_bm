@@ -1,0 +1,238 @@
+/*
+ * COSC 420 - Project 2: AICA Simulation
+ * 
+ * Description:
+ *     Does cool stuff I guess...
+ *
+ *     This program is written as a test program for my new language, known as
+ *     CN_Script (Clara Nguyen's Script). This language is to be parsed into
+ *     valid C code and then compiled with a C compiler like GCC.
+ *
+ * Author:
+ *     Clara Van Nguyen
+ */
+
+#import <io>
+#import <cnds/grid>
+
+object parametre {
+	double J1, J2, h, R1, R2;
+};
+
+func write_PGM(grid p, char* file) {
+	FILE* fp = fopen(file, "w");
+	fprintf(
+		fp,
+		"P5\n%d %d\n255\n",
+		p.size_y(), p.size_x()
+	);
+
+	int x = 0,
+	    y = 0;
+	char* val;
+
+	for (; y < p.size_y(); y++) {
+		for (x = 0; x < p.size_x(); x++) {
+			val = p.at(x, y);
+
+			if (*val == 1) {
+				fputc(255, fp);
+			}
+			else {
+				fputc(0, fp);
+			}
+		}
+	}
+	fclose(fp);
+}
+
+func<int> abs_dist(int x1, int y1, int x2, int y2) {
+	int lhs = (x2 - x1),
+		rhs = (y2 - y1);
+	
+	if (lhs < 0)  { lhs *= -1; }
+	if (rhs < 0)  { rhs *= -1; }
+	if (lhs > 15) { lhs = 30 - lhs; }
+	if (rhs > 15) { rhs = 30 - rhs; }
+
+	return lhs + rhs;
+}
+
+func<int> check_validity(grid a, grid b) {
+	//Returns:
+	//  0 - The 2 grids are identical
+	//  1 - The 2 grids are NOT identical
+	int x, y;
+	char *v, *w;
+
+	for (y = 0; y < a.size_y(); y++) {
+		for (x = 0; x < a.size_x(); x++) {
+			v = a.at(x, y);	
+			w = b.at(x, y);	
+
+			if (*v != *w) {
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
+func img_shift(grid dest, grid src) {
+	//Shifts all pixels from "src" to "dest".
+	//TODO: Make memcpy() version
+	int x, y;
+	char *v, *w;
+
+	for (y = 0; y < dest.size_y(); y++) {
+		for (x = 0; x < dest.size_x(); x++) {
+			v = dest.at(x, y);
+			w = src.at(x, y);	
+
+			*v = *w;
+		}
+	}
+}
+
+func<int> update(grid p, parametre param) {
+	printf("%lg\n", param.h);
+
+	//Make a grid that has information about updating pixels
+	grid updates;
+	updates.init_size(sizeof(char), p.size_x(), p.size_y());
+	int updated_count = 0,
+	    updated_limit = p.size();
+	
+	//Default variables
+	int    x, y, xt, yt, d;
+	double total_near, total_far, yes;
+	char   *val, *cell;
+
+	until (updated_count == updated_limit) {
+		//Pick a random cell
+		x = rand() % p.size_x();
+		y = rand() % p.size_y();
+
+		//Reset our total information
+		total_near = 0;
+		total_far  = 0;
+
+		//Let's check if this one has already been updated...
+		val = updates.at(x, y);
+
+		if (*val != 0) {
+			//This cell has already been updated.
+			continue;
+		}
+		else {
+			//This cell needs updating. Let's go.
+			for (yt = 0; yt < p.size_y(); yt++) {
+				for (xt = 0; xt < p.size_x(); xt++) {
+					if (xt == x && yt == y) {
+						//This is the same cell. Skip it.
+						continue;
+					}
+
+					//Get the distance
+					d = abs_dist(x, y, xt, yt);
+
+					cell = p.at(xt, yt);
+
+					if (d < param.R1) {
+						total_near += *cell;
+					}
+					eif (d >= param.R1 && d < param.R2) {
+						total_far  += *cell;
+					}
+				}
+			}
+
+			//Compute a total
+			yes = 
+				param.h + 
+				(total_near * param.J1) + 
+				(total_far  * param.J2);
+			
+			cell = p.at(x, y);
+			if (yes >= 0) {
+				*cell = 1;
+			}
+			else {
+				*cell = -1;
+			}
+			
+			//Tell the updater that we have updated this cell.
+			*val = 1;
+			updated_count++;
+		}
+	}
+
+	//Free the update grid.
+	updates.free();
+
+	return 1;
+}
+
+func main(int argc, char** argv) {
+	parametre param;
+	char* v;
+	int x, y = 0, r, iter;
+
+	//Check parametres
+	if (argc != 6) {
+		//You messed up
+		printf("Usage: %s J1 J2 h R1 R2\n", argv[0]);
+		exit(2);
+	}
+	else {
+		//Yay you did it right... but let's see if you really did.
+		//Actually let's just assume you did for now.
+		param.J1 = strtod(argv[1], NULL);
+		param.J2 = strtod(argv[2], NULL);
+		param.h  = strtod(argv[3], NULL);
+		param.R1 = strtod(argv[4], NULL);
+		param.R2 = strtod(argv[5], NULL);
+	}
+
+	//Make our grid
+	srand(time(NULL));
+
+	grid pixels, newpix;	
+	pixels.init(sizeof(char));
+	pixels.resize(30, 30);
+
+	newpix.init(sizeof(char));
+	newpix.resize(30, 30);
+
+	//Set all pixels to random values
+	for (; y < pixels.size_y(); y++) {
+		for (x = 0; x < pixels.size_x(); x++) {
+			v = pixels.at(x, y);
+			r = rand() % 2;
+
+			if (r != 0) {
+				*v = 1;
+			}
+			else {
+				*v = -1;
+			}
+		}
+	}
+
+	char fname_buf[16];
+	while (1) {
+		img_shift(newpix, pixels);		
+		update(pixels, param);
+
+		//Write our PGM file
+		sprintf(fname_buf, "frame%04d.pgm", iter++);
+		write_PGM(pixels, fname_buf);
+
+		break_if(check_validity(newpix, pixels));
+	}
+
+	//Clean out the grids.
+	pixels.free();
+	newpix.free();
+}

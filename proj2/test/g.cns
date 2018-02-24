@@ -1,0 +1,20 @@
+#import <io>
+#import <grid>
+
+func main() {
+	grid a;
+	a.init(sizeof(int));
+
+	a.resize(2, 2);
+
+	int* val = a.at(0, 0);
+	*val = 2;
+
+	int x, y;
+	for (y = 0; y < a.size_y(); y++) {
+		for (x = 0; x < a.size_x(); x++) {
+			val = a.at(x, y);
+			printf("%d %d: %d\n", x, y, *val);
+		}
+	}
+}
