@@ -1,6 +1,6 @@
-# Run Script for ACIA thingie
+# Run Script for AICA thingie
 
-if [ ! -e "acia" ]; then
+if [ ! -e "aica" ]; then
 	# Program isn't compiled. So let's make it.
 	make
 fi
@@ -9,9 +9,12 @@ fi
 rm -f "frame"*".pgm"
 
 # Run experiment
-./acia "$@"
+./aica "$@"
 
 # Generate a GIF
 if [ $? -eq 0 ]; then
-	convert -loop 0 -delay 5 frame*.pgm result.gif
+	convert -loop 0 -delay 10 frame*.pgm -filter box -resize 800% result.gif
 fi
+
+# Clean up (Yes, twice)
+rm -f "frame"*".pgm"

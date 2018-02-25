@@ -2,7 +2,13 @@
  * COSC 420 - Project 2: AICA Simulation
  * 
  * Description:
- *     Does cool stuff I guess...
+ *     Generates a 30x30 images (by default) simulating a 2D Cellular Automata
+ *     known as AICA (Activation/Inhibition Cellular Automation). The program
+ *     uses various formulas to generate the next frame, and stops whenever the
+ *     next frame has no changes to it. The visualisation method is binary PGM
+ *     files (with P5 header). These are nearly 0.25x the size of a P2 PGM file
+ *     and store the same information. The files are written as "frame%04d.pgm"
+ *     in the current working directory.
  *
  *     This program is written as a test program for my new language, known as
  *     CN_Script (Clara Nguyen's Script). This language is to be parsed into
@@ -15,22 +21,60 @@
 #import <io>
 #import <cnds/grid>
 
+__INLINE_C {
+	//Because Raspberry Pi makes "char" unsigned by default...
+	typedef signed char CN_SCHAR;
+}
+
 object parametre {
 	double J1, J2, h, R1, R2;
-	int sz;
+	int sz, method;
+
+	/*
+	 * Methods determine how the RNG selects an index:
+	 * 
+	 * 0 - Brute Force (loop until all values are hit)
+	 * 1 - Fisher-Yates Shuffle
+	 */
+
+	func print_synopsis() {
+		printf("Variable Information:\n");
+		printf("%-24s [ %4d ] [ %4d ]\n", "Dimensions:", this->sz, this->sz);
+		printf("%-24s [ %4lg ] [ %4lg ]\n", "Radius:", this->R1, this->R2);
+		printf("%-24s [ %4lg ] [ %4lg ]\n", "Multiplier:", this->J1, this->J2);
+		printf("%-24s [ %13lg ]\n", "Bias:", this->h);
+		printf("%-24s ", "Method:");
+		if (this->method == 0) {
+			printf(
+				"[ %13s ]\n",
+				"Brute Force"
+			);
+		}
+		else {
+			printf(
+				"[ %13s ]\n",
+				"Fisher-Yates"
+			);
+		}
+		printf("\n");
+	}
 };
 
 func write_PGM(grid p, char* file) {
+	//Writes binary PGM (P5) file to "file" from the grid "p".
 	FILE* fp = fopen(file, "w");
+
+	//Write header
 	fprintf(
 		fp,
 		"P5\n%d %d\n255\n",
 		p.size_y(), p.size_x()
 	);
 
+	//Write pixels (as bytes)
 	int x = 0,
 	    y = 0;
-	char* val;
+	CN_SCHAR* val;
 
 	for (; y < p.size_y(); y++) {
 		for (x = 0; x < p.size_x(); x++) {
@@ -60,45 +104,10 @@ func<int> abs_dist(parametre param, int x1, int y1, int x2, int y2) {
 	return lhs + rhs;
 }
 
-func<int> check_validity(grid a, grid b) {
-	//Returns:
-	//  0 - The 2 grids are identical
-	//  1 - The 2 grids are NOT identical
-	int x, y;
-	char *v, *w;
-
-	for (y = 0; y < a.size_y(); y++) {
-		for (x = 0; x < a.size_x(); x++) {
-			v = a.at(x, y);	
-			w = b.at(x, y);	
-
-			if (*v != *w) {
-				return 0;
-			}
-		}
-	}
-
-	return 1;
-}
-
-func img_shift(grid dest, grid src) {
-	//Shifts all pixels from "src" to "dest".
-	//TODO: Make memcpy() version
-	int x, y;
-	char *v, *w;
-
-	for (y = 0; y < dest.size_y(); y++) {
-		for (x = 0; x < dest.size_x(); x++) {
-			v = dest.at(x, y);
-			w = src.at(x, y);	
-
-			*v = *w;
-		}
-	}
-}
-
 func<int> update(grid p, parametre param) {
-	printf("%lg\n", param.h);
+	//Returns:
+	//  0 - Nothing was updated
+	//  1 - Something was updated
 
 	//Make a grid that has information about updating pixels
 	grid updates;
@@ -107,14 +116,39 @@ func<int> update(grid p, parametre param) {
 	    updated_limit = p.size();
 	
 	//Default variables
-	int    x, y, xt, yt, d;
-	double total_near, total_far, yes;
-	char   *val, *cell;
+	int      x, y, xt, yt, d, status;
+	double   total_near, total_far, yes, dd;
+	CN_SCHAR *val, *cell;
+	CN_SCHAR prev_cell;
+
+	status = 0;
+	int index[p.size()];
+
+	//A very quick Fisher-Yates shuffle
+	if (param.method == 1) {
+		int ti;
+		for (x = 0; x < p.size(); x++) {
+			index[x] = x;
+		}
+
+		for (x = p.size() - 1; x > 0; x--) {
+			y  = (rand() * 1.0) / 2147483647 * (x + 1);
+			ti = index[y];
+			index[y] = index[x];
+			index[x] = ti;
+		}
+	}
 
 	until (updated_count == updated_limit) {
 		//Pick a random cell
-		x = rand() % p.size_x();
-		y = rand() % p.size_y();
+		if (param.method == 1) {
+			x = index[updated_count] % p.size_x();
+			y = index[updated_count] / p.size_y();
+		}
+		else {
+			x = rand() % p.size_x();
+			y = rand() % p.size_y();
+		}
 
 		//Reset our total information
 		total_near = 0;
@@ -157,11 +191,16 @@ func<int> update(grid p, parametre param) {
 				(total_far  * param.J2);
 			
 			cell = p.at(x, y);
+			prev_cell = *cell;
 			if (yes >= 0) {
 				*cell = 1;
 			}
 			else {
 				*cell = -1;
+			}
+
+			if (prev_cell != *cell) {
+				status = 1;
 			}
 			
 			//Tell the updater that we have updated this cell.
@@ -173,16 +212,20 @@ func<int> update(grid p, parametre param) {
 	//Free the update grid.
 	updates.free();
 
-	return 1;
+	return status;
 }
 
 func main(int argc, char** argv) {
 	parametre param;
-	char* v;
-	int x, y = 0, r, iter;
+	CN_SCHAR* v;
+	int x, y = 0, r, iter = 0, stat = 0;
 
-	//Set the image to be 30x30
-	param.sz = 30;
+	//Intro print
+	printf(
+		"%s\n%s\n\n",
+		"ACIA Simulator by Clara Nguyen",
+		"Uses grids to simulate 2D Cellular Automata."
+	);
 
 	//Check parametres
 	if (argc != 6) {
@@ -200,17 +243,25 @@ func main(int argc, char** argv) {
 		param.R2 = strtod(argv[5], NULL);
 	}
 
+
+	//Set the image to be 30x30
+	param.sz     = 30;
+	param.method = 1; //Brute Force
+
+
+	//Print out cool stats thing.
+	param.print_synopsis();
+
 	//Make our grid
 	srand(time(NULL));
 
-	grid pixels, newpix;	
-	pixels.init(sizeof(char));
+	printf("[1 / 4] Setting up grid...\n");
+	grid pixels;
+	pixels.init(sizeof(CN_SCHAR));
 	pixels.resize(param.sz, param.sz);
 
-	newpix.init(sizeof(char));
-	newpix.resize(param.sz, param.sz);
-
 	//Set all pixels to random values
+	printf("[2 / 4] Randomising all cells...\n");
 	for (; y < pixels.size_y(); y++) {
 		for (x = 0; x < pixels.size_x(); x++) {
 			v = pixels.at(x, y);
@@ -225,21 +276,28 @@ func main(int argc, char** argv) {
 		}
 	}
 
+	//Buffer to hold filename
 	char fname_buf[16];
+
+	//Write our initial PGM file
+	printf("[3 / 4] Generating image #%d...", iter + 1);
+	sprintf(fname_buf, "frame%04d.pgm", iter++);
+	write_PGM(pixels, fname_buf);
+
 	loop {
+		printf("\r[3 / 4] Generating image #%d...", iter + 1);
 		//Copy image over, then update the current one.
-		img_shift(newpix, pixels);
-		update(pixels, param);
+		stat = update(pixels, param);
 
 		//Write our PGM file
 		sprintf(fname_buf, "frame%04d.pgm", iter++);
 		write_PGM(pixels, fname_buf);
 
 		//If the image is the same as the previous, kill it.
-		break_if(check_validity(newpix, pixels));
+		break_if(stat == 0);
 	}
+	printf("\n[4 / 4] Done generating images!\n");
 
 	//Clean out the grids.
 	pixels.free();
-	newpix.free();
 }

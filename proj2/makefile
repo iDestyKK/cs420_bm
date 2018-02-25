@@ -1,18 +1,18 @@
 # C Compiler
 CC      = gcc
-CFLAGS  = --std=gnu89 -g
+CFLAGS  = --std=gnu89 -g -O3
 
 # CN_Script Compiler
 CNC     = /home/ssmit285/giua_cong_chung/bin/cns
 CNFLAGS = 
 
-all: acia
+all: aica
 	
-acia: acia.c
+aica: aica.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-acia.c: acia.cns
+aica.c: aica.cns
 	$(CNC) $(CNFLAGS) $^ > $@
 
 clean:
-	$(RM) acia acia.c
+	$(RM) aica aica.c
