@@ -17,6 +17,7 @@
 
 object parametre {
 	double J1, J2, h, R1, R2;
+	int sz;
 };
 
 func write_PGM(grid p, char* file) {
@@ -46,14 +47,15 @@ func write_PGM(grid p, char* file) {
 	fclose(fp);
 }
 
-func<int> abs_dist(int x1, int y1, int x2, int y2) {
+func<int> abs_dist(parametre param, int x1, int y1, int x2, int y2) {
 	int lhs = (x2 - x1),
-		rhs = (y2 - y1);
+		rhs = (y2 - y1),
+		s   = param.sz;
 	
 	if (lhs < 0)  { lhs *= -1; }
 	if (rhs < 0)  { rhs *= -1; }
-	if (lhs > 15) { lhs = 30 - lhs; }
-	if (rhs > 15) { rhs = 30 - rhs; }
+	if (lhs > s / 2) { lhs = s - lhs; }
+	if (rhs > s / 2) { rhs = s - rhs; }
 
 	return lhs + rhs;
 }
@@ -135,7 +137,7 @@ func<int> update(grid p, parametre param) {
 					}
 
 					//Get the distance
-					d = abs_dist(x, y, xt, yt);
+					d = abs_dist(param, x, y, xt, yt);
 
 					cell = p.at(xt, yt);
 
@@ -179,6 +181,9 @@ func main(int argc, char** argv) {
 	char* v;
 	int x, y = 0, r, iter;
 
+	//Set the image to be 30x30
+	param.sz = 30;
+
 	//Check parametres
 	if (argc != 6) {
 		//You messed up
@@ -200,10 +205,10 @@ func main(int argc, char** argv) {
 
 	grid pixels, newpix;	
 	pixels.init(sizeof(char));
-	pixels.resize(30, 30);
+	pixels.resize(param.sz, param.sz);
 
 	newpix.init(sizeof(char));
-	newpix.resize(30, 30);
+	newpix.resize(param.sz, param.sz);
 
 	//Set all pixels to random values
 	for (; y < pixels.size_y(); y++) {
@@ -221,14 +226,16 @@ func main(int argc, char** argv) {
 	}
 
 	char fname_buf[16];
-	while (1) {
-		img_shift(newpix, pixels);		
+	loop {
+		//Copy image over, then update the current one.
+		img_shift(newpix, pixels);
 		update(pixels, param);
 
 		//Write our PGM file
 		sprintf(fname_buf, "frame%04d.pgm", iter++);
 		write_PGM(pixels, fname_buf);
 
+		//If the image is the same as the previous, kill it.
 		break_if(check_validity(newpix, pixels));
 	}
 
