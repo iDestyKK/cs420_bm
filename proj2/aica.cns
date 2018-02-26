@@ -377,6 +377,19 @@ func<double*> calc_joint_entropy(grid p, parametre param) {
 	return Hj;
 }
 
+func<double*> calc_mutual_info(parametre param, double* Hj, double entropy) {
+	double *MI = calloc(param.sz / 2, sizeof(double));
+	int    i   = 0;
+
+	for (; i < param.sz / 2; i++) {
+		MI[i] = (2.0 * entropy) - Hj[i];
+		printf("%lg ", MI[i]);
+	}
+	printf("\n");
+
+	return MI;
+}
+
 func main(int argc, char** argv) {
 	parametre param;
 	CN_SCHAR* v;
@@ -438,7 +451,7 @@ func main(int argc, char** argv) {
 
 	//Buffer to hold filename
 	char fname_buf[16];
-	double *pl, *hj;
+	double *pl, *hj, *mi;
 	double *avg_pl = calloc(pixels.size_x() / 2, sizeof(double));
 	double entropy;
 
@@ -465,6 +478,7 @@ func main(int argc, char** argv) {
 	pl      = calc_correlation  (pixels, param);
 	entropy = calc_entropy      (pixels, param);
 	hj      = calc_joint_entropy(pixels, param);
+	mi      = calc_mutual_info  (param , hj   , entropy);
 
 	printf("%lg\n", entropy);
 
