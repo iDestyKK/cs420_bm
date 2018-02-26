@@ -278,10 +278,10 @@ func<double*> calc_correlation(grid p, parametre param) {
 		}
 	}
 
-	for (i = 0; i < p.size_x() / 2; i++) {
+	/*for (i = 0; i < p.size_x() / 2; i++) {
 		printf("%lg ", sc[i]);
 	}
-	printf("\n");
+	printf("\n");*/
 
 	return sc;
 }
@@ -369,10 +369,10 @@ func<double*> calc_joint_entropy(grid p, parametre param) {
 		Hj[i] = (-1.0) * (pprob + nprob + eprob);
 	}
 
-	for (i = 0; i < p.size_x() / 2; i++) {
+	/*for (i = 0; i < p.size_x() / 2; i++) {
 		printf("%lg ", Hj[i]);
 	}
-	printf("\n");
+	printf("\n");*/
 
 	return Hj;
 }
@@ -383,11 +383,41 @@ func<double*> calc_mutual_info(parametre param, double* Hj, double entropy) {
 
 	for (; i < param.sz / 2; i++) {
 		MI[i] = (2.0 * entropy) - Hj[i];
-		printf("%lg ", MI[i]);
+		//printf("%lg ", MI[i]);
 	}
-	printf("\n");
+	//printf("\n");
 
 	return MI;
+}
+
+func gen_csv(
+	parametre param,
+	double*   correlation,
+	double    entropy,
+	double*   joint_entropy,
+	double*   mutual_info) {
+	//Generates a CSV entry with all of the information generated.
+	int i = 0,
+	    j = param.sz / 2;
+	
+	//Print row information
+	printf("distance,correlation,entropy,joint_entropy,mutual_info,J1,J2,h,R1,R2\n");
+
+	for (; i < j; i++) {
+		printf(
+			"%d,%lg,%lg,%lg,%lg,%lg,%lg,%lg,%lg,%lg\n",
+			i,
+			correlation  [i],
+			entropy,
+			joint_entropy[i],
+			mutual_info  [i],
+			param.J1,
+			param.J2,
+			param.h,
+			param.R1,
+			param.R2
+		);
+	}
 }
 
 func main(int argc, char** argv) {
@@ -480,7 +510,8 @@ func main(int argc, char** argv) {
 	hj      = calc_joint_entropy(pixels, param);
 	mi      = calc_mutual_info  (param , hj   , entropy);
 
-	printf("%lg\n", entropy);
+	//printf("%lg\n", entropy);
+	gen_csv(param, pl, entropy, hj, mi);
 
 	//Clean up memory
 	free(pl);
