@@ -324,6 +324,59 @@ func<double> calc_entropy(grid p, parametre param) {
 	return (-1.0) * (ent_plus + ent_minus);
 }
 
+func<double*> calc_joint_entropy(grid p, parametre param) {
+	double   *Hj = calloc(p.size_x() / 2, sizeof(double));
+	int      i, d, x1, y1, x2, y2, pstate[2], nstate[2];
+	double   psum, nsum, pprob, nprob, eprob;
+	CN_SCHAR *val1, *val2;
+
+	for (i = 1; i < p.size_x() / 2; i++) {
+		psum = 0.0;
+		nsum = 0.0;
+
+		//Loop through all cells
+		for (y1 = 0; y1 < p.size_y(); y1++) {
+			for (x1 = 0; x1 < p.size_x(); x1++) {
+				val1 = p.at(x1, y1);
+				pstate[0] = (1 + *val1) / 2;
+				nstate[0] = (1 - *val1) / 2;
+				
+				//For each of the cells, go through the cells and get distance
+				for (y2 = 0; y2 < p.size_y(); y2++) {
+					for (x2 = 0; x2 < p.size_x(); x2++) {
+						val2 = p.at(x2, y2);
+						d = abs_dist(param, x1, y1, x2, y2);
+
+						if (d == i) {
+							pstate[1] = (1.0 + *val2) / 2;
+							nstate[1] = (1.0 - *val2) / 2;
+
+							psum += pstate[0] * pstate[1];
+							nsum += nstate[0] * nstate[1];
+						}
+					}
+				}
+			}
+		}
+		pprob = (1.0 / (p.size() * (4 * i))) * psum;
+		nprob = (1.0 / (p.size() * (4 * i))) * nsum;
+		eprob = 1 - pprob - nprob;
+
+		if (pprob != 0) { pprob = pprob * log2(pprob); }
+		if (nprob != 0) { nprob = nprob * log2(nprob); }
+		if (eprob != 0) { eprob = eprob * log2(eprob); }
+
+		Hj[i] = (-1.0) * (pprob + nprob + eprob);
+	}
+
+	for (i = 0; i < p.size_x() / 2; i++) {
+		printf("%lg ", Hj[i]);
+	}
+	printf("\n");
+
+	return Hj;
+}
+
 func main(int argc, char** argv) {
 	parametre param;
 	CN_SCHAR* v;
@@ -385,7 +438,7 @@ func main(int argc, char** argv) {
 
 	//Buffer to hold filename
 	char fname_buf[16];
-	double *pl;
+	double *pl, *hj;
 	double *avg_pl = calloc(pixels.size_x() / 2, sizeof(double));
 	double entropy;
 
@@ -409,11 +462,14 @@ func main(int argc, char** argv) {
 	printf("\n[4 / 4] Done generating images!\n");
 
 	//Do computations
-	pl      = calc_correlation(pixels, param);
-	entropy = calc_entropy    (pixels, param);
+	pl      = calc_correlation  (pixels, param);
+	entropy = calc_entropy      (pixels, param);
+	hj      = calc_joint_entropy(pixels, param);
+
 	printf("%lg\n", entropy);
 
 	//Clean up memory
 	free(pl);
+	free(hj);
 	pixels.free();
 }
