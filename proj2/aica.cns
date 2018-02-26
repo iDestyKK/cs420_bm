@@ -278,7 +278,50 @@ func<double*> calc_correlation(grid p, parametre param) {
 		}
 	}
 
+	for (i = 0; i < p.size_x() / 2; i++) {
+		printf("%lg ", sc[i]);
+	}
+	printf("\n");
+
 	return sc;
+}
+
+func<double> calc_entropy(grid p, parametre param) {
+	double   entropy = 0.0;
+	int      x, y, s = 0;
+	CN_SCHAR *val;
+
+	double   prob_plus, prob_minus,
+	         ent_plus , ent_minus;
+
+	//Go through the entire grid and convert
+	for (y = 0; y < p.size_y(); y++) {
+		for (x = 0; x < p.size_x(); x++) {
+			val = p.at(x, y);
+			s += (1 + *val) / 2;
+		}
+	}
+
+	//Compute probabilities
+	prob_plus  = (1.0 / p.size()) * s;
+	prob_minus = 1.0 - prob_plus;
+
+	//Now for the fun part.
+	if (prob_plus == 0) {
+		ent_plus = 0;
+	}
+	else {
+		ent_plus = prob_plus * log2(prob_plus);
+	}
+
+	if (prob_minus == 0) {
+		ent_minus = 0;
+	}
+	else {
+		ent_minus = prob_minus * log2(prob_minus);
+	}
+
+	return (-1.0) * (ent_plus + ent_minus);
 }
 
 func main(int argc, char** argv) {
@@ -309,11 +352,9 @@ func main(int argc, char** argv) {
 		param.R2 = strtod(argv[5], NULL);
 	}
 
-
 	//Set the image to be 30x30
 	param.sz     = 30;
 	param.method = 1; //Brute Force
-
 
 	//Print out cool stats thing.
 	param.print_synopsis();
@@ -346,6 +387,7 @@ func main(int argc, char** argv) {
 	char fname_buf[16];
 	double *pl;
 	double *avg_pl = calloc(pixels.size_x() / 2, sizeof(double));
+	double entropy;
 
 	//Write our initial PGM file
 	printf("[3 / 4] Generating image #%d...", iter + 1);
@@ -356,12 +398,6 @@ func main(int argc, char** argv) {
 		printf("\r[3 / 4] Generating image #%d...", iter + 1);
 		//Copy image over, then update the current one.
 		stat = update(pixels, param);
-		pl = calc_correlation(pixels, param);
-
-		for (x = 0; x < pixels.size_x() / 2; x++) {
-			avg_pl[x] += pl[x];
-		}
-		free(pl);
 
 		//Write our PGM file
 		sprintf(fname_buf, "frame%04d.pgm", iter++);
@@ -372,14 +408,12 @@ func main(int argc, char** argv) {
 	}
 	printf("\n[4 / 4] Done generating images!\n");
 
-	//Generate averages
-	printf("Correlation: \n");
-	for (x = 0; x < pixels.size_x() / 2; x++) {
-		avg_pl[x] /= iter - 1;
-		printf("%lg ", avg_pl[x]);
-	}
-	printf("\n");
+	//Do computations
+	pl      = calc_correlation(pixels, param);
+	entropy = calc_entropy    (pixels, param);
+	printf("%lg\n", entropy);
 
-	//Clean out the grids.
+	//Clean up memory
+	free(pl);
 	pixels.free();
 }
