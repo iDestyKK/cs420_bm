@@ -18,8 +18,12 @@
  *     Clara Van Nguyen
  */
 
+//CN_Script imports
 #import <io>
 #import <cnds/grid>
+
+//C Imports
+#cimport <math.h>
 
 __INLINE_C {
 	//Because Raspberry Pi makes "char" unsigned by default...
@@ -89,6 +93,13 @@ func write_PGM(grid p, char* file) {
 		}
 	}
 	fclose(fp);
+}
+
+func<double> double_abs(double val) {
+	if (val < 0) {
+		return -1.0 * val;
+	}
+	return val;
 }
 
 func<int> abs_dist(parametre param, int x1, int y1, int x2, int y2) {
@@ -215,6 +226,61 @@ func<int> update(grid p, parametre param) {
 	return status;
 }
 
+func<double*> calc_correlation(grid p, parametre param) {
+	double   *sc = calloc(p.size_x() / 2, sizeof(double));
+	double   pl;
+	int      i, d, x1, y1, x2, y2;
+	double   csum, psum, v1, v2;
+	CN_SCHAR *val1, *val2;
+
+	//Loop through all possible distances
+	for (i = 0; i < p.size_x() / 2; i++) {
+		csum = 0.0;
+		psum = 0.0;
+
+		//Loop through all cells
+		for (y1 = 0; y1 < p.size_y(); y1++) {
+			for (x1 = 0; x1 < p.size_x(); x1++) {
+				val1 = p.at(x1, y1);
+				csum += *val1;
+				
+				//For each of the cells, go through the cells and get distance
+				for (y2 = 0; y2 < p.size_y(); y2++) {
+					for (x2 = 0; x2 < p.size_x(); x2++) {
+						val2 = p.at(x2, y2);
+						d = abs_dist(param, x1, y1, x2, y2);
+
+						if (d == i) {
+							v1 = *val1;
+							v2 = *val2;
+							psum += (v1 * v2);
+						}
+					}
+				}
+			}
+		}
+
+		if (i == 0) {
+			sc[i] = double_abs(
+				1.0 -
+				pow(((1.0 / p.size()) * csum), 2)
+			);
+		}
+		else {
+			/*sc[i] = abs(
+				((2.0 * psum) / (p.size() * (i * 4))) - 
+				pow(((1 / p.size()) * csum), 2)
+			);*/
+			sc[i] = double_abs(
+				((1.0 * psum) / (p.size() * (i * 4))) -
+				pow(((1.0 / p.size()) * csum), 2)
+			);
+		}
+	}
+
+	return sc;
+}
+
 func main(int argc, char** argv) {
 	parametre param;
 	CN_SCHAR* v;
@@ -278,6 +344,8 @@ func main(int argc, char** argv) {
 
 	//Buffer to hold filename
 	char fname_buf[16];
+	double *pl;
+	double *avg_pl = calloc(pixels.size_x() / 2, sizeof(double));
 
 	//Write our initial PGM file
 	printf("[3 / 4] Generating image #%d...", iter + 1);
@@ -288,6 +356,12 @@ func main(int argc, char** argv) {
 		printf("\r[3 / 4] Generating image #%d...", iter + 1);
 		//Copy image over, then update the current one.
 		stat = update(pixels, param);
+		pl = calc_correlation(pixels, param);
+
+		for (x = 0; x < pixels.size_x() / 2; x++) {
+			avg_pl[x] += pl[x];
+		}
+		free(pl);
 
 		//Write our PGM file
 		sprintf(fname_buf, "frame%04d.pgm", iter++);
@@ -297,6 +371,14 @@ func main(int argc, char** argv) {
 		break_if(stat == 0);
 	}
 	printf("\n[4 / 4] Done generating images!\n");
+
+	//Generate averages
+	printf("Correlation: \n");
+	for (x = 0; x < pixels.size_x() / 2; x++) {
+		avg_pl[x] /= iter - 1;
+		printf("%lg ", avg_pl[x]);
+	}
+	printf("\n");
 
 	//Clean out the grids.
 	pixels.free();
