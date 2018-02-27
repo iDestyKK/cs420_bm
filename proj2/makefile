@@ -1,6 +1,6 @@
 # C Compiler
 CC      = gcc
-CFLAGS  = --std=gnu89 -g -O3
+CFLAGS  = --std=gnu89 -g -O3 -lm
 
 # CN_Script Compiler
 CNC     = /home/ssmit285/giua_cong_chung/bin/cns

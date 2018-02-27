@@ -391,6 +391,7 @@ func<double*> calc_mutual_info(parametre param, double* Hj, double entropy) {
 }
 
 func gen_csv(
+	char*     fname,
 	parametre param,
 	double*   correlation,
 	double    entropy,
@@ -399,12 +400,15 @@ func gen_csv(
 	//Generates a CSV entry with all of the information generated.
 	int i = 0,
 	    j = param.sz / 2;
+
+	FILE* fp = fopen(fname, "w");
 	
 	//Print row information
-	printf("distance,correlation,entropy,joint_entropy,mutual_info,J1,J2,h,R1,R2\n");
+	fprintf(fp, "distance,correlation,entropy,joint_entropy,mutual_info,J1,J2,h,R1,R2\n");
 
 	for (; i < j; i++) {
-		printf(
+		fprintf(
+			fp,
 			"%d,%lg,%lg,%lg,%lg,%lg,%lg,%lg,%lg,%lg\n",
 			i,
 			correlation  [i],
@@ -418,6 +422,8 @@ func gen_csv(
 			param.R2
 		);
 	}
+
+	fclose(fp);
 }
 
 func main(int argc, char** argv) {
@@ -456,7 +462,7 @@ func main(int argc, char** argv) {
 	param.print_synopsis();
 
 	//Make our grid
-	srand(time(NULL));
+	srand(time(NULL) * getpid());
 
 	printf("[1 / 4] Setting up grid...\n");
 	grid pixels;
@@ -511,7 +517,7 @@ func main(int argc, char** argv) {
 	mi      = calc_mutual_info  (param , hj   , entropy);
 
 	//printf("%lg\n", entropy);
-	gen_csv(param, pl, entropy, hj, mi);
+	gen_csv("result.csv", param, pl, entropy, hj, mi);
 
 	//Clean up memory
 	free(pl);
