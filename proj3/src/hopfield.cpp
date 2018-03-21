@@ -47,11 +47,11 @@ TM hopfield<T>::hopfield(unsigned int i, unsigned int j, const vector<T>& c) {
 }
 
 //Get Methods
-TM unsigned int hopfield<T>::elems() {
+TM unsigned int hopfield<T>::neurons() {
 	return p[0].size();
 }
 
-TM unsigned int hopfield<T>::rows() {
+TM unsigned int hopfield<T>::patterns() {
 	return p.size();
 }
 
@@ -99,8 +99,8 @@ TM void hopfield<T>::calc_w(int k) {
 		}
 	*/
 
-	for (int i = 0; i < elems(); i++) {
-		for (int j = 0; j < elems(); j++) {
+	for (int i = 0; i < neurons(); i++) {
+		for (int j = 0; j < neurons(); j++) {
 			if (i != j) {
 				//The true formula involves 1/N. However, for now, we will just
 				//get a total, then do the division in "stable_test".
@@ -119,7 +119,7 @@ TM bool hopfield<T>::is_stable(int k) {
 	for (int i = 0; i < network.size(); i++) {
 		//Compute "h".
 		for (int j = 0; j < network.size(); j++)
-			h[j] = (w[i][j] / elems()) * p[k][j];
+			h[j] = (w[i][j] / neurons()) * p[k][j];
 
 		//Accumulate the data.
 		total = std::accumulate(h.begin(), h.end(), 0.0);

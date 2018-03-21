@@ -19,8 +19,8 @@ class hopfield {
 		hopfield(unsigned int, unsigned int, const vector<T>&);
 
 		//Get Functions
-		unsigned int              elems         ();
-		unsigned int              rows          ();
+		unsigned int              neurons       ();
+		unsigned int              patterns      ();
 		vector< vector<T     > >& data          ();
 		vector< vector<double> >& weights       ();
 		vector< double         >& net           ();
