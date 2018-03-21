@@ -69,21 +69,6 @@ int main(int argc, char** argv) {
 	vector<double     > avg_unstable(patterns, 0.0);
 	vector<double     > avg_stableIm(patterns, 0.0);
 
-	//Create simulations.
-	/*vector< hopfield<signed char> > hnet;
-	hnet.resize(simulations, hopfield<signed char>(patterns, neurons, choices));
-
-	for (int i = 0; i < hnet.size(); i++) {
-		//Perform magic
-		hnet[i].run_test();
-
-		//Add to averages
-		for (int j = 0; j < patterns; j++) {
-			avg_unstable[j] += hnet[i].unstable_prob()[j];
-			avg_stableIm[j] += hnet[i].stable_count ()[j];
-		}
-	}*/
-
 	for (int i = 0; i < simulations; i++) {
 		//Perform magic
 		hopfield<signed char> hnet(patterns, neurons, choices);
