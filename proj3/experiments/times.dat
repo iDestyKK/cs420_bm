@@ -1,0 +1,26 @@
+EXPERIMENT 1: Hopfield Sim (P: 50, N: 100, R: 50)
+real    0m0.540s
+user    0m0.534s
+sys     0m0.001s
+
+EXPERIMENT 2: Hopfield Sim (P: 100, N: 100, R: 50)
+real    0m0.929s
+user    0m0.925s
+sys     0m0.001s
+
+EXPERIMENT 3: Hopfield Sim (P: 50, N: 200, R: 50)
+real    0m3.655s
+user    0m3.548s
+sys     0m0.008s
+
+EXPERIMENT 4: Hopfield Sim (P: 100, N: 200, R: 50)
+real    0m5.614s
+user    0m5.550s
+sys     0m0.007s
+
+EXPERIMENT 5: Hopfield Sim (P: 100, N: 200, R: 50)
+real    247m16.198s
+user    247m10.979s
+sys     0m1.989s
+
+EXPERIMENT 6: Hopfield Sim (P: 1000, N: 2000, R: 50)
