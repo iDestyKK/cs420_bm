@@ -65,9 +65,10 @@ int main(int argc, char** argv) {
 	srand(time(NULL) * getpid());
 
 	//Setup Average variables.
-	vector<signed char> choices = {-1, 1};
-	vector<double     > avg_unstable(patterns, 0.0);
-	vector<double     > avg_stableIm(patterns, 0.0);
+	vector< signed char    > choices = {-1, 1};
+	vector< double         > avg_unstable(patterns, 0.0);
+	vector< double         > avg_stableIm(patterns, 0.0);
+	vector< vector<double> > avg_basin(patterns, vector<double>(patterns + 1, 0.0));
 
 	for (int i = 0; i < simulations; i++) {
 		//Perform magic
@@ -78,10 +79,42 @@ int main(int argc, char** argv) {
 		for (int j = 0; j < patterns; j++) {
 			avg_unstable[j] += hnet.unstable_prob()[j];
 			avg_stableIm[j] += hnet.stable_count ()[j];
+
+			//Grad Exclusive: Add up all basin sizes.
+			for (int k = 0; k < patterns + 1; k++)
+				avg_basin[j][k] += hnet.basin_sizes()[j][k];
 		}
 	}
 
-	//Form CSV File
+	//Grad Exclusive: Form CSV file for Grad Data.
+	//For the sake of simplicity, this will output to stderr. Redirect it.
+	//Top line
+	fprintf(stderr, "\"Unnormalised\"\n");
+	for (int i = 0; i < avg_basin[i].size(); i++)
+		fprintf(stderr, "%d,", i);
+	fprintf(stderr, "\n");
+
+	//The data matrix (Graph 2 in handout)
+	for (int i = 0; i < avg_basin.size(); i++) {
+		for (int j = 0; j < avg_basin[i].size(); j++)
+			fprintf(stderr, "%lg,", (avg_basin[i][j] / simulations));
+		fprintf(stderr, "\n");
+	}
+	fprintf(stderr, "\n");
+
+	fprintf(stderr, "\"Normalised\"\n");
+	for (int i = 0; i < avg_basin[i].size(); i++)
+		fprintf(stderr, "%d,", i);
+	fprintf(stderr, "\n");
+
+	//The data matrix normalised (Graph 1 in handout)
+	for (int i = 0; i < avg_basin.size(); i++) {
+		for (int j = 0; j < avg_basin[i].size(); j++)
+			fprintf(stderr, "%lg,", (avg_basin[i][j] / simulations) / (i + 1));
+		fprintf(stderr, "\n");
+	}
+
+	//Form CSV File for Undergrad Data
 	//Header
 	printf(
 		"\"%s\",\"%s\",\"%s\"\n",

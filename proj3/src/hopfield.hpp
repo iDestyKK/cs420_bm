@@ -27,10 +27,12 @@ class hopfield {
 		vector< double         >& stable_prob   ();
 		vector< double         >& unstable_prob ();
 		vector< int            >& stable_count  ();
+		vector< vector<double> >& basin_sizes   ();
 
 		//"Do some stuff" Functions
 		void                      permeate      (const vector<T>&);
 		void                      calc_w        (int);
+		int                       calc_b        (int); //Grad Exclusive!
 		bool                      is_stable     (int);
 		void                      run_test      ();
 	private:
@@ -40,6 +42,7 @@ class hopfield {
 		vector< int            >  num_stable;    //Self-Explanatory
 		vector< double         >  prob_stable;   //Ditto
 		vector< double         >  prob_unstable; //Ditto...
+		vector< vector<double> >  basin_size;    //DITTO...
 };
 
 #include "hopfield.cpp"
