@@ -1,0 +1,33 @@
+EXPERIMENT 1: Hopfield Sim (P: 50, N: 100, R: 50)
+0.80    user
+0.19    system 
+0:00.36 elapsed
+276%    CPU (0avgtext+0avgdata 6780maxresident)k
+0inputs+6768outputs (11major+22184minor)pagefaults 0swaps
+
+EXPERIMENT 2: Hopfield Sim (P: 100, N: 100, R: 50)
+1.32    user
+0.21    system
+0:00.41 elapsed
+368%CPU (0avgtext+0avgdata 6792maxresident)k
+0inputs+6768outputs (11major+22199minor)pagefaults 0swaps
+
+EXPERIMENT 3: Hopfield Sim (P: 50, N: 200, R: 50)
+4.70    user
+0.55    system
+0:00.88 elapsed
+596%CPU (0avgtext+0avgdata 7036maxresident)k
+0inputs+6752outputs (11major+22673minor)pagefaults 0swaps
+
+EXPERIMENT 4: Hopfield Sim (P: 100, N: 200, R: 50)
+7.23    user
+0.78    system
+0:01.22 elapsed
+652%CPU (0avgtext+0avgdata 7044maxresident)k
+0inputs+6744outputs (11major+22685minor)pagefaults 0swaps
+
+EXPERIMENT 5: Hopfield Sim (P: 1000, N: 2000, R: 50)
+
+EXPERIMENT 6: Hopfield Sim (P: 10000, N: 20000, R: 50)4.55user 20.93system 1:41.27elapsed 25%CPU (0avgtext+0avgdata 2363092maxresident)k
+117880inputs+6760outputs (1813major+6375123minor)pagefaults 0swaps
+
