@@ -1,0 +1,50 @@
+__INLINE_C {
+	typedef unsigned int       cng_uint;
+	typedef unsigned long long cng_u64;
+	typedef unsigned char      cng_byte;
+}
+
+object CN_GRID {
+	//Variables
+	void**   data;
+	cng_uint elem_size,
+	         width, height,
+			 owid, ohei;
+	
+	//Functions
+	func init(cng_uint size) {
+		this->width     = 0;
+		this->height    = 0;
+		this->owid      = 0;
+		this->ohei      = 0;
+		this->data      = NULL;
+		this->elem_size = size;
+	}
+
+	func init_size(cng_uint size, cng_uint width, cng_uint height) {
+		this->width     = width;
+		this->height    = height;
+		this->owid      = width;
+		this->ohei      = height;
+		this->data      = calloc(width * height, size);
+		this->elem_size = size;
+	}
+
+	func cn_grid_resize_x(cng_uint _w) {
+		this->width = _w;
+		__cn_grid_resize_proc(this);
+	}
+
+	func cn_grid_resize_y(cng_uint _h) {
+		this->height = _h;
+		__cn_grid_resize_proc(this);
+	}
+
+	func cn_grid_resize(cng_uint _w, cng_uint _h) {
+		this->width  = _w;
+		this->height = _h;
+		__cn_grid_resize_proc(this);
+	}
+
+	func 
+};

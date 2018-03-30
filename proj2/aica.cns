@@ -1,0 +1,526 @@
+/*
+ * COSC 420 - Project 2: AICA Simulation
+ * 
+ * Description:
+ *     Generates a 30x30 images (by default) simulating a 2D Cellular Automata
+ *     known as AICA (Activation/Inhibition Cellular Automation). The program
+ *     uses various formulas to generate the next frame, and stops whenever the
+ *     next frame has no changes to it. The visualisation method is binary PGM
+ *     files (with P5 header). These are nearly 0.25x the size of a P2 PGM file
+ *     and store the same information. The files are written as "frame%04d.pgm"
+ *     in the current working directory.
+ *
+ *     This program is written as a test program for my new language, known as
+ *     CN_Script (Clara Nguyen's Script). This language is to be parsed into
+ *     valid C code and then compiled with a C compiler like GCC.
+ *
+ * Author:
+ *     Clara Van Nguyen
+ */
+
+//CN_Script imports
+#import <io>
+#import <cnds/grid>
+
+//C Imports
+#cimport <math.h>
+
+__INLINE_C {
+	//Because Raspberry Pi makes "char" unsigned by default...
+	typedef signed char CN_SCHAR;
+}
+
+object parametre {
+	double J1, J2, h, R1, R2;
+	int sz, method;
+
+	/*
+	 * Methods determine how the RNG selects an index:
+	 * 
+	 * 0 - Brute Force (loop until all values are hit)
+	 * 1 - Fisher-Yates Shuffle
+	 */
+
+	func print_synopsis() {
+		printf("Variable Information:\n");
+		printf("%-24s [ %4d ] [ %4d ]\n", "Dimensions:", this->sz, this->sz);
+		printf("%-24s [ %4lg ] [ %4lg ]\n", "Radius:", this->R1, this->R2);
+		printf("%-24s [ %4lg ] [ %4lg ]\n", "Multiplier:", this->J1, this->J2);
+		printf("%-24s [ %13lg ]\n", "Bias:", this->h);
+		printf("%-24s ", "Method:");
+		if (this->method == 0) {
+			printf(
+				"[ %13s ]\n",
+				"Brute Force"
+			);
+		}
+		else {
+			printf(
+				"[ %13s ]\n",
+				"Fisher-Yates"
+			);
+		}
+		printf("\n");
+	}
+};
+
+func write_PGM(grid p, char* file) {
+	//Writes binary PGM (P5) file to "file" from the grid "p".
+	FILE* fp = fopen(file, "w");
+
+	//Write header
+	fprintf(
+		fp,
+		"P5\n%d %d\n255\n",
+		p.size_y(), p.size_x()
+	);
+
+	//Write pixels (as bytes)
+	int x = 0,
+	    y = 0;
+	CN_SCHAR* val;
+
+	for (; y < p.size_y(); y++) {
+		for (x = 0; x < p.size_x(); x++) {
+			val = p.at(x, y);
+
+			if (*val == 1) {
+				fputc(255, fp);
+			}
+			else {
+				fputc(0, fp);
+			}
+		}
+	}
+	fclose(fp);
+}
+
+func<double> double_abs(double val) {
+	if (val < 0) {
+		return -1.0 * val;
+	}
+	return val;
+}
+
+func<int> abs_dist(parametre param, int x1, int y1, int x2, int y2) {
+	int lhs = (x2 - x1),
+		rhs = (y2 - y1),
+		s   = param.sz;
+	
+	if (lhs < 0)  { lhs *= -1; }
+	if (rhs < 0)  { rhs *= -1; }
+	if (lhs > s / 2) { lhs = s - lhs; }
+	if (rhs > s / 2) { rhs = s - rhs; }
+
+	return lhs + rhs;
+}
+
+func<int> update(grid p, parametre param) {
+	//Returns:
+	//  0 - Nothing was updated
+	//  1 - Something was updated
+
+	//Make a grid that has information about updating pixels
+	grid updates;
+	updates.init_size(sizeof(char), p.size_x(), p.size_y());
+	int updated_count = 0,
+	    updated_limit = p.size();
+	
+	//Default variables
+	int      x, y, xt, yt, d, status;
+	double   total_near, total_far, yes, dd;
+	CN_SCHAR *val, *cell;
+	CN_SCHAR prev_cell;
+
+	status = 0;
+	int index[p.size()];
+
+	//A very quick Fisher-Yates shuffle
+	if (param.method == 1) {
+		int ti;
+		for (x = 0; x < p.size(); x++) {
+			index[x] = x;
+		}
+
+		for (x = p.size() - 1; x > 0; x--) {
+			y  = (rand() * 1.0) / 2147483647 * (x + 1);
+			ti = index[y];
+			index[y] = index[x];
+			index[x] = ti;
+		}
+	}
+
+	until (updated_count == updated_limit) {
+		//Pick a random cell
+		if (param.method == 1) {
+			x = index[updated_count] % p.size_x();
+			y = index[updated_count] / p.size_y();
+		}
+		else {
+			x = rand() % p.size_x();
+			y = rand() % p.size_y();
+		}
+
+		//Reset our total information
+		total_near = 0;
+		total_far  = 0;
+
+		//Let's check if this one has already been updated...
+		val = updates.at(x, y);
+
+		if (*val != 0) {
+			//This cell has already been updated.
+			continue;
+		}
+		else {
+			//This cell needs updating. Let's go.
+			for (yt = 0; yt < p.size_y(); yt++) {
+				for (xt = 0; xt < p.size_x(); xt++) {
+					if (xt == x && yt == y) {
+						//This is the same cell. Skip it.
+						continue;
+					}
+
+					//Get the distance
+					d = abs_dist(param, x, y, xt, yt);
+
+					cell = p.at(xt, yt);
+
+					if (d < param.R1) {
+						total_near += *cell;
+					}
+					eif (d >= param.R1 && d < param.R2) {
+						total_far  += *cell;
+					}
+				}
+			}
+
+			//Compute a total
+			yes = 
+				param.h + 
+				(total_near * param.J1) + 
+				(total_far  * param.J2);
+			
+			cell = p.at(x, y);
+			prev_cell = *cell;
+			if (yes >= 0) {
+				*cell = 1;
+			}
+			else {
+				*cell = -1;
+			}
+
+			if (prev_cell != *cell) {
+				status = 1;
+			}
+			
+			//Tell the updater that we have updated this cell.
+			*val = 1;
+			updated_count++;
+		}
+	}
+
+	//Free the update grid.
+	updates.free();
+
+	return status;
+}
+
+func<double*> calc_correlation(grid p, parametre param) {
+	double   *sc = calloc(p.size_x() / 2, sizeof(double));
+	double   pl;
+	int      i, d, x1, y1, x2, y2;
+	double   csum, psum, v1, v2;
+	CN_SCHAR *val1, *val2;
+
+	//Loop through all possible distances
+	for (i = 0; i < p.size_x() / 2; i++) {
+		csum = 0.0;
+		psum = 0.0;
+
+		//Loop through all cells
+		for (y1 = 0; y1 < p.size_y(); y1++) {
+			for (x1 = 0; x1 < p.size_x(); x1++) {
+				val1 = p.at(x1, y1);
+				csum += *val1;
+				
+				//For each of the cells, go through the cells and get distance
+				for (y2 = 0; y2 < p.size_y(); y2++) {
+					for (x2 = 0; x2 < p.size_x(); x2++) {
+						val2 = p.at(x2, y2);
+						d = abs_dist(param, x1, y1, x2, y2);
+
+						if (d == i) {
+							v1 = *val1;
+							v2 = *val2;
+							psum += (v1 * v2);
+						}
+					}
+				}
+			}
+		}
+
+		if (i == 0) {
+			sc[i] = double_abs(
+				1.0 -
+				pow(((1.0 / p.size()) * csum), 2)
+			);
+		}
+		else {
+			/*sc[i] = abs(
+				((2.0 * psum) / (p.size() * (i * 4))) - 
+				pow(((1 / p.size()) * csum), 2)
+			);*/
+			sc[i] = double_abs(
+				((1.0 * psum) / (p.size() * (i * 4))) -
+				pow(((1.0 / p.size()) * csum), 2)
+			);
+		}
+	}
+
+	/*for (i = 0; i < p.size_x() / 2; i++) {
+		printf("%lg ", sc[i]);
+	}
+	printf("\n");*/
+
+	return sc;
+}
+
+func<double> calc_entropy(grid p, parametre param) {
+	double   entropy = 0.0;
+	int      x, y, s = 0;
+	CN_SCHAR *val;
+
+	double   prob_plus, prob_minus,
+	         ent_plus , ent_minus;
+
+	//Go through the entire grid and convert
+	for (y = 0; y < p.size_y(); y++) {
+		for (x = 0; x < p.size_x(); x++) {
+			val = p.at(x, y);
+			s += (1 + *val) / 2;
+		}
+	}
+
+	//Compute probabilities
+	prob_plus  = (1.0 / p.size()) * s;
+	prob_minus = 1.0 - prob_plus;
+
+	//Now for the fun part.
+	if (prob_plus == 0) {
+		ent_plus = 0;
+	}
+	else {
+		ent_plus = prob_plus * log2(prob_plus);
+	}
+
+	if (prob_minus == 0) {
+		ent_minus = 0;
+	}
+	else {
+		ent_minus = prob_minus * log2(prob_minus);
+	}
+
+	return (-1.0) * (ent_plus + ent_minus);
+}
+
+func<double*> calc_joint_entropy(grid p, parametre param) {
+	double   *Hj = calloc(p.size_x() / 2, sizeof(double));
+	int      i, d, x1, y1, x2, y2, pstate[2], nstate[2];
+	double   psum, nsum, pprob, nprob, eprob;
+	CN_SCHAR *val1, *val2;
+
+	for (i = 1; i < p.size_x() / 2; i++) {
+		psum = 0.0;
+		nsum = 0.0;
+
+		//Loop through all cells
+		for (y1 = 0; y1 < p.size_y(); y1++) {
+			for (x1 = 0; x1 < p.size_x(); x1++) {
+				val1 = p.at(x1, y1);
+				pstate[0] = (1 + *val1) / 2;
+				nstate[0] = (1 - *val1) / 2;
+				
+				//For each of the cells, go through the cells and get distance
+				for (y2 = 0; y2 < p.size_y(); y2++) {
+					for (x2 = 0; x2 < p.size_x(); x2++) {
+						val2 = p.at(x2, y2);
+						d = abs_dist(param, x1, y1, x2, y2);
+
+						if (d == i) {
+							pstate[1] = (1.0 + *val2) / 2;
+							nstate[1] = (1.0 - *val2) / 2;
+
+							psum += pstate[0] * pstate[1];
+							nsum += nstate[0] * nstate[1];
+						}
+					}
+				}
+			}
+		}
+		pprob = (1.0 / (p.size() * (4 * i))) * psum;
+		nprob = (1.0 / (p.size() * (4 * i))) * nsum;
+		eprob = 1 - pprob - nprob;
+
+		if (pprob != 0) { pprob = pprob * log2(pprob); }
+		if (nprob != 0) { nprob = nprob * log2(nprob); }
+		if (eprob != 0) { eprob = eprob * log2(eprob); }
+
+		Hj[i] = (-1.0) * (pprob + nprob + eprob);
+	}
+
+	/*for (i = 0; i < p.size_x() / 2; i++) {
+		printf("%lg ", Hj[i]);
+	}
+	printf("\n");*/
+
+	return Hj;
+}
+
+func<double*> calc_mutual_info(parametre param, double* Hj, double entropy) {
+	double *MI = calloc(param.sz / 2, sizeof(double));
+	int    i   = 0;
+
+	for (; i < param.sz / 2; i++) {
+		MI[i] = (2.0 * entropy) - Hj[i];
+		//printf("%lg ", MI[i]);
+	}
+	//printf("\n");
+
+	return MI;
+}
+
+func gen_csv(
+	char*     fname,
+	parametre param,
+	double*   correlation,
+	double    entropy,
+	double*   joint_entropy,
+	double*   mutual_info) {
+	//Generates a CSV entry with all of the information generated.
+	int i = 0,
+	    j = param.sz / 2;
+
+	FILE* fp = fopen(fname, "w");
+	
+	//Print row information
+	fprintf(fp, "distance,correlation,entropy,joint_entropy,mutual_info,J1,J2,h,R1,R2\n");
+
+	for (; i < j; i++) {
+		fprintf(
+			fp,
+			"%d,%lg,%lg,%lg,%lg,%lg,%lg,%lg,%lg,%lg\n",
+			i,
+			correlation  [i],
+			entropy,
+			joint_entropy[i],
+			mutual_info  [i],
+			param.J1,
+			param.J2,
+			param.h,
+			param.R1,
+			param.R2
+		);
+	}
+
+	fclose(fp);
+}
+
+func main(int argc, char** argv) {
+	parametre param;
+	CN_SCHAR* v;
+	int x, y = 0, r, iter = 0, stat = 0;
+
+	//Intro print
+	printf(
+		"%s\n%s\n\n",
+		"ACIA Simulator by Clara Nguyen",
+		"Uses grids to simulate 2D Cellular Automata."
+	);
+
+	//Check parametres
+	if (argc != 6) {
+		//You messed up
+		printf("Usage: %s J1 J2 h R1 R2\n", argv[0]);
+		exit(2);
+	}
+	else {
+		//Yay you did it right... but let's see if you really did.
+		//Actually let's just assume you did for now.
+		param.J1 = strtod(argv[1], NULL);
+		param.J2 = strtod(argv[2], NULL);
+		param.h  = strtod(argv[3], NULL);
+		param.R1 = strtod(argv[4], NULL);
+		param.R2 = strtod(argv[5], NULL);
+	}
+
+	//Set the image to be 30x30
+	param.sz     = 30;
+	param.method = 1; //Brute Force
+
+	//Print out cool stats thing.
+	param.print_synopsis();
+
+	//Make our grid
+	srand(time(NULL) * getpid());
+
+	printf("[1 / 4] Setting up grid...\n");
+	grid pixels;
+	pixels.init(sizeof(CN_SCHAR));
+	pixels.resize(param.sz, param.sz);
+
+	//Set all pixels to random values
+	printf("[2 / 4] Randomising all cells...\n");
+	for (; y < pixels.size_y(); y++) {
+		for (x = 0; x < pixels.size_x(); x++) {
+			v = pixels.at(x, y);
+			r = rand() % 2;
+
+			if (r != 0) {
+				*v = 1;
+			}
+			else {
+				*v = -1;
+			}
+		}
+	}
+
+	//Buffer to hold filename
+	char fname_buf[16];
+	double *pl, *hj, *mi;
+	double *avg_pl = calloc(pixels.size_x() / 2, sizeof(double));
+	double entropy;
+
+	//Write our initial PGM file
+	printf("[3 / 4] Generating image #%d...", iter + 1);
+	sprintf(fname_buf, "frame%04d.pgm", iter++);
+	write_PGM(pixels, fname_buf);
+
+	loop {
+		printf("\r[3 / 4] Generating image #%d...", iter + 1);
+		//Copy image over, then update the current one.
+		stat = update(pixels, param);
+
+		//Write our PGM file
+		sprintf(fname_buf, "frame%04d.pgm", iter++);
+		write_PGM(pixels, fname_buf);
+
+		//If the image is the same as the previous, kill it.
+		break_if(stat == 0);
+	}
+	printf("\n[4 / 4] Done generating images!\n");
+
+	//Do computations
+	pl      = calc_correlation  (pixels, param);
+	entropy = calc_entropy      (pixels, param);
+	hj      = calc_joint_entropy(pixels, param);
+	mi      = calc_mutual_info  (param , hj   , entropy);
+
+	//printf("%lg\n", entropy);
+	gen_csv("result.csv", param, pl, entropy, hj, mi);
+
+	//Clean up memory
+	free(pl);
+	free(hj);
+	pixels.free();
+}

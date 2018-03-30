@@ -1,0 +1,13 @@
+#import <io>
+#cimport "../lib/handy/cnds/cn_grid.h"
+#cimport "../lib/handy/cnds/cn_grid.c"
+
+func main() {
+	CN_GRID g = cn_grid_init_size(int, 2, 2);
+	int* a = cn_grid_at(g, 0, 0);
+	*a = 2;
+	printf(
+		"%d\n",
+		cn_grid_get(g, int, 0, 0)
+	);
+}
