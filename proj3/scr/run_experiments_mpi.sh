@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd ../
+
 function run {
 	# void run(num, patterns, neurons, repetitions, file)
 	printf "EXPERIMENT $1: Hopfield Sim (P: $2, N: $3, R: $4)" \

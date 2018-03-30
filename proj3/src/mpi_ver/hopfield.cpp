@@ -8,6 +8,8 @@
 #define TM \
 	template <typename T>
 
+#define DEBUG_PRINT 0
+
 using namespace std;
 
 //Constructor Methods
@@ -112,17 +114,14 @@ TM void hopfield<T>::calc_w(int k) {
 
 TM bool hopfield<T>::is_stable(int k) {
 	vector<T>      network = p[k];
-	vector<double> h(network.size(), 0.0);
 	double         total;
 	signed char    new_state;
 
 	for (int i = 0; i < network.size(); i++) {
 		//Compute "h".
+		total = 0.0;
 		for (int j = 0; j < network.size(); j++)
-			h[j] = (w[i][j] / neurons()) * p[k][j];
-
-		//Accumulate the data.
-		total = std::accumulate(h.begin(), h.end(), 0.0);
+			total += (w[i][j] / neurons()) * p[k][j];
 
 		//Determine the new state
 		new_state = (total < 0) ? -1 : 1;
@@ -139,14 +138,41 @@ TM bool hopfield<T>::is_stable(int k) {
 	return true;
 }
 
-TM void hopfield<T>::run_test() {
+TM void hopfield<T>::run_test(int sn = -1, int st = -1) {
 	bool stable;
+
+	//Set the simulation number
+	sim_num   = sn;
+	sim_total = st;
+
+	if (sim_num != -1 && DEBUG_PRINT)
+		printf("\rSimulation %d...", sim_num);
 
 	for (int i = 0; i < p.size(); i++) {
 		calc_w(i);
+		if (sim_num != -1 && DEBUG_PRINT) {
+			printf(
+				"\rSimulation %d... %lg\%",
+				sim_num,
+				(100.0 * ((double)i / p.size()) / sim_total) + (100 / sim_total) * sn
+			);
+		}
 
 		num_stable[i] = 0;
 		for (int j = 0; j <= i; j++) {
+			if (sim_num != -1 && DEBUG_PRINT) {
+				printf(
+					"\rSimulation %d... %lg\%",
+					sim_num,
+					(
+						(100.0 * ((double)i / p.size()) / sim_total) +
+						((100 / sim_total) * sn                    ) + 
+						(((double)j / i) / sim_total / p.size()    ) + 
+						((double)i / p.size() / sim_total          )
+					)
+				);
+			}
+
 			if (is_stable(j)) {
 				num_stable[i]++;
 			}

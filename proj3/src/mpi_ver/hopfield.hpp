@@ -32,7 +32,7 @@ class hopfield {
 		void                      permeate      (const vector<T>&);
 		void                      calc_w        (int);
 		bool                      is_stable     (int);
-		void                      run_test      ();
+		void                      run_test      (int, int);
 	private:
 		vector< vector<T     > >  p;             //Patterns
 		vector< vector<double> >  w;             //Weights
@@ -40,6 +40,8 @@ class hopfield {
 		vector< int            >  num_stable;    //Self-Explanatory
 		vector< double         >  prob_stable;   //Ditto
 		vector< double         >  prob_unstable; //Ditto...
+		int                       sim_num;       //Simulation Number
+		int                       sim_total;     //Simulation Total
 };
 
 #include "hopfield.cpp"

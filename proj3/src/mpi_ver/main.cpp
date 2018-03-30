@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 	for (int i = id; i < simulations; i += size) {
 		//Perform magic
 		hopfield<signed char> hnet(patterns, neurons, choices);
-		hnet.run_test();
+		hnet.run_test(i, simulations);
 
 		//Add to averages
 		for (int j = 0; j < patterns; j++) {
