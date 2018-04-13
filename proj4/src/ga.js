@@ -1,5 +1,5 @@
 /*
- * COSC 420 - Project 4: Genetic Algorithms
+ * COSC 420 - Project 4: Genetic Algorithms (Node.js Edition)
  *
  * Description (UK):
  *     Simulations a population and how it grows, produces offspring, and
@@ -27,6 +27,8 @@
  * Author:
  *     Clara Nguyen
  */
+
+"use strict";
 
 class simulation {
 	constructor(argv) {
