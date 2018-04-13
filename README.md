@@ -8,8 +8,7 @@ COSC 420, 427, and 527 focus on *biologically-inspired computation*, including r
 + Project 1 - 1D Cellular Automata (Done!)
 + Project 2 - Activation/Inhibition Cellular Automaton (Done!)
 + Project 3 - Hopfield Net (Done!)
-- Project 4 - Backpropagation (N/A)
-- Project 5 - Genetic Algorithms (N/A)
-- Project 6 - Particle Swarm Optimization (N/A)
-- Project 7 - Extra Credit (N/A)
+? Project 4 - Genetic Algorithms (WIP)
+- Project 5 - Particle Swarm Optimization (N/A)
+- Project 6 - Extra Credit (N/A)
 ```
