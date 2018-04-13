@@ -1,9 +1,29 @@
 /*
- * COSC 420 - Project 4: Generic Algorithms
+ * COSC 420 - Project 4: Genetic Algorithms
  *
  * Description (UK):
- *     Does stuff.
+ *     Simulations a population and how it grows, produces offspring, and
+ *     so on. The simulation can span an infinite amount of generations and
+ *     support an infinite number of genes and individuals. The goal is to
+ *     figure out how to make a population have the most fit individuals.
+ *
+ * Output:
+ *     The output of this simulation is a CSV file which is expected to be
+ *     piped to a file. Graphs can be generated to show visually what is
+ *     going on in each generation. Microsoft Excel is preferred for the
+ *     graph generation.
  * 
+ * Synopsis:
+ *     node ga.js genes population generations mutation_prob crossover_prob
+ *       genes          - Number of genes each individual has
+ *       population     - Number of individuals per generation
+ *       generations    - Number of generations to go through
+ *       mutation_prob  - Probability for a gene to mutate (flip)
+ *       crossover_prob - Probability for genes to flip between 2 children
+ *
+ * Example Usages:
+ *     node ga.js 20 30 10 0.033 0.6
+ *
  * Author:
  *     Clara Nguyen
  */
@@ -11,11 +31,11 @@
 class simulation {
 	constructor(argv) {
 		//Cast all values into integers
-		this.genes                 = parseInt(argv[2]);
-		this.population_size       = parseInt(argv[3]);
-		this.generations           = parseInt(argv[4]);
-		this.mutation_probability  = parseFloat(argv[5]);
-		this.crossover_probability = parseFloat(argv[6]);
+		this.genes                 = parseInt(argv[0]);
+		this.population_size       = parseInt(argv[1]);
+		this.generations           = parseInt(argv[2]);
+		this.mutation_probability  = parseFloat(argv[3]);
+		this.crossover_probability = parseFloat(argv[4]);
 
 		//Setup variable names
 		this.L                     = this.genes;
@@ -138,11 +158,48 @@ class simulation {
 
 	set_next_generation() {
 		//Push "individuals[]" into "generations[]".
-		this.generations.push(this.individuals);
+		//Make it an object that we can analyse later on.
+		this.generations.push(
+			new generation(this.individuals)
+		);
+
+		this.generations[this.generations.length - 1].compute_values();
 
 		//Set "individuals[]" to be the "newborn[]", then clear it.
 		this.individuals = this.newborn;
 		this.newborn = [];
+	}
+}
+
+class generation {
+	constructor(arr) {
+		this.individuals      = arr;
+		this.avg_fitness      = undefined;
+		this.fitness_best     = undefined;
+		this.avg_correct_bits = undefined;
+	}
+
+	compute_values() {
+		//Assume that the first individual has the best fitness
+		this.fitness_best     = this.individuals[0].fitness;
+		this.avg_fitness      = 0.0;
+		this.avg_correct_bits = 0.0;
+
+		//Compute Average Fitness, Best Fitness, and Average of "Correct" bits
+		for (let i = 0; i < this.individuals.length; i++) {
+			this.avg_fitness += this.individuals[i].fitness;
+
+			//Set the best fitness if available.
+			if (this.individuals[i].fitness > this.fitness_best)
+				this.fitness_best = this.individuals[i].fitness;
+
+			//Add number of correct bits
+			for (let j = 0; j < this.individuals[i].genes.length; j++) {
+				this.avg_correct_bits += this.individuals[i].genes[j];
+			}
+		}
+		this.avg_fitness      /= this.individuals.length;
+		this.avg_correct_bits /= this.individuals.length;
 	}
 }
 
@@ -152,7 +209,7 @@ class individual {
 		this.fitness       = 0;
 		this.fitness_norm  = 0;
 		this.running_total = 0;
-		this.parents       = [-1, -1];
+		this.parents       = [undefined, undefined];
 	}
 
 	calc_F(L) {
@@ -170,18 +227,33 @@ function bitarray_to_int(str) {
 }
 
 function main(argc, argv) {
+	//You did it wrong.
 	if (argc - 2 != 5) {
-		console.log("Usage: node ga.js genes population_size generations mutation_probability crossover_probability");
+		console.log("Usage: node ga.js genes population generations mutation_prob crossover_prob");
 		process.exit(1);
 	}
 	
-	let experiment = new simulation(argv);
+	//Run the Simulation
+	let experiment = new simulation(argv.slice(2));
 	experiment.setup();
 	for (let i = 0; i < experiment.G; i++) {
 		experiment.calculate_fitness();
 		experiment.determine_parents_and_mate();
-		console.log(experiment.individuals);
 		experiment.set_next_generation();
+	}
+	
+	//Print out the CSV file
+	console.log("\"Generation\",\"Average Fitness\",\"Best Fitness Individual\",\"Average Correct Bits\"");
+	for (let i = 0; i < experiment.generations.length; i++) {
+		let _GEN = experiment.generations[i];
+
+		console.log(
+			"%d,%d,%d,%d",
+			i,
+			_GEN.avg_fitness,
+			_GEN.fitness_best,
+			_GEN.avg_correct_bits
+		);
 	}
 }
 
