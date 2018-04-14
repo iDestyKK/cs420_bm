@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html;
+      charset=windows-1252">
+    <title>Project 4 - Genetic Algorithms</title>
+  </head>
+  <body>
+    <center>
+      <h2>Project 4 - Genetic Algorithms</h2>
+    </center>
+    <h3>Undergrad portion</h3>
+    The program should accept the following as input: <br>
+    <br>
+    <ul>
+      <li> Number of genes (bits) in the genetic string <font
+          face="mistral">l</font> </li>
+      <li> Population size <i>N</i> </li>
+      <li> Number of generations <i>G</i> </li>
+      <li> Mutation probability <i>p</i><sub>m</sub> </li>
+      <li> Crossover probability <i>p</i><sub>c</sub> </li>
+    </ul>
+    1. <b>Initialize the population.</b> Generate <i>N</i>-bit strings
+    each of size <font face="mistral">l</font>. It is easier to
+    represent the individuals as character arrays rather than integers.
+    <br>
+    <br>
+    For each generation, do the following: <br>
+    <br>
+    <blockquote> 2. <b>Calculate the fitness of each individual.</b>
+      This can be done in several steps: <br>
+      <br>
+      a. Find the integer that the individual's bit string represents.
+      Iterate through each bit, and if the bit is a 1, then add the
+      corresponding power of 2 to a running sum. For example, if <font
+        face="mistral">l</font>=20, and if the leftmost bit of the
+      string is 1, then add 2<sup>19</sup> to the sum. Use the loop
+      index to help you figure out which power of 2 you are on for each
+      iteration. After looping through all the bits, this running sum
+      will be the integer value of the bit string. <br>
+      <br>
+      b. Plug the integer value from step a into the fitness function <i>F</i>(<i>s</i>)=(<i>x</i>/2<sup><font
+          face="mistral">l</font></sup>)<sup>10</sup> to get that
+      individual's fitness value. <br>
+      <br>
+      c. When you are looping through each individual finding the
+      fitness value, keep a running sum of the total fitness, which is
+      the sum of fitness values for all <i>N</i> individuals. <br>
+      <br>
+      d. For each individual, normalize its fitness value by dividing
+      its fitness value by the total fitness from step c. It's best to
+      store these normalized values in a separate array than the actual
+      fitness values since you will need to keep the original fitness
+      values for finding the statistics in a later step. <br>
+      <br>
+      e. For each individual, compute a number which is the sum of that
+      individual's normalized fitness value, and the normalized fitness
+      values for each of the individuals before it. Thus, a running
+      total is kept of the normalized fitness values. This will be
+      helpful later when probabilistically selecting parents. <br>
+      <br>
+      The following example should make steps d and e more clear. Note
+      that the total fitness value is 1.95. Also note that the sum of
+      all the normalized fitness values is 1.
+      <pre>Individual  Fitness value  Normalized fitness value  Running total
+    0           0.05              0.0256                0.0256
+    1           0.2               0.1026                0.1282
+    2           0.6               0.3077                0.4359
+    3           0.3               0.1538                0.5897
+    4           0.8               0.4103                1.0000
+</pre>
+      Now you are set up to select parents and produce the next
+      generation. <br>
+      <br>
+      Perform N/2 iterations doing the following: <br>
+      <br>
+      <blockquote> 3. <b>Select two individuals to be parents.</b>
+        First get two random numbers between 0 and 1. Then see which
+        range the random numbers fall into based on the running total
+        numbers computed in step 2e above. The random number will be
+        between two of those numbers. The individual associated with the
+        second of those numbers will be the individual selected to be a
+        parent. For example, suppose your two random numbers are 0.4147
+        and 0.7395. In the example above, the number 0.4147 is between
+        0.1282 and 0.4359, so individual 2 is one of the parents. In the
+        above example, the number 0.7395 is between 0.5897 and 1.0000,
+        so individual 4 is the other parent. Be sure that you get two
+        distinct parents when you do this step, so that you do not
+        result in an individual mating with itself. Keep selecting a
+        second parent until you get one that is different from the first
+        parent. <br>
+        <br>
+        4. <b>Mate parents and perform any crossover to get offspring.</b>
+        <br>
+        <br>
+        a. First generate a random number to determine whether crossover
+        will be done. <br>
+        <br>
+        b. If no crossover is done, then simply copy the bit strings of
+        the parents into new bit strings which will represent the
+        offspring. <br>
+        <br>
+        c. If crossover is done, then first randomly select a bit to be
+        the crossover point. Then copy the bit strings of the parents
+        into the bit strings of the offspring up to the crossover point.
+        After the crossover point, reverse which offspring gets the bits
+        from which parent. <br>
+        <br>
+        5. <b>Perform any mutations on the offspring.</b> For each of
+        the two offspring, go through all the bits in their strings. For
+        each bit, generate a random number to indicate whether that bit
+        will be mutated. If the bit will be mutated, then simply flip
+        that bit. <br>
+        <br>
+      </blockquote>
+      6. <b>Update the population.</b> Copy all of the offspring bit
+      string arrays into the bit string arrays of the current
+      population. The new offspring will replace the current population.
+      In other words, the current population arrays will be overwritten
+      by the offspring arrays. <br>
+      <br>
+      7. <b>Find the statistics of the population.</b> Find the average
+      fitness of the population, the fitness of the best individual, and
+      the number of correct bits in the best individual. Find these
+      three measures for each generation. You will use this data to make
+      the required graphs. You might want to store all this data in
+      arrays which you can then dump into a file later on. <br>
+      <br>
+    </blockquote>
+    Repeat all of the above for several different runs. Do not average
+    over them as this will either result in loss of data for individual
+    runs or the average will just be a straight line. Plot all of these
+    runs on the same graph and/or choose one of the runs as a "typical"
+    run and plot it. <br>
+    <br>
+    Also repeat all of the above for several different combinations of
+    the five parameters given at the beginning of this document. For
+    each combination of parameters, do several runs as explained in the
+    previous paragraph. <br>
+    <br>
+  </body>
+</html>
