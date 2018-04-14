@@ -30,6 +30,9 @@
 
 "use strict";
 
+//Globals
+var __DUMP_PRIOR_GENERATIONS = true;
+
 class simulation {
 	constructor(argv) {
 		//Cast all values into integers
@@ -166,6 +169,10 @@ class simulation {
 		);
 
 		this.generations[this.generations.length - 1].compute_values();
+		
+		if (__DUMP_PRIOR_GENERATIONS) {
+			delete this.generations[this.generations.length - 1].individuals;
+		}
 
 		//Set "individuals[]" to be the "newborn[]", then clear it.
 		this.individuals = this.newborn;
@@ -224,7 +231,11 @@ function bitarray_to_int(str) {
 	/* Converts a string of binary numbers into its respective integers */
 	var res = 0;
 	for (let i = 0; i < str.length; i++)
-		res += (1 << i) * (str[str.length - 1 - i] == 1);
+		res += Math.pow(2, i) * (str[str.length - 1 - i] == 1);
+
+	//Single Instruction, but breaks if genes are 32 or above
+	//for (let i = 0; i < str.length; i++)
+	//	res += (1 << i) * (str[str.length - 1 - i] == 1);
 	return res;
 }
 
