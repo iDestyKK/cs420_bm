@@ -1,0 +1,185 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html;
+      charset=windows-1252">
+    <title>Project 5 - Particle Swarm Optimization</title>
+  </head>
+  <body>
+    <center>
+      <h2>Project 5 — Particle Swarm Optimization</h2>
+    </center>
+    <h3>Parameters</h3>
+    The following is some guidance for the ranges of the parameters. <br>
+    <br>
+    <b>Number of particles:</b> A typical range is 20 to 40. For many
+    problems, as few as 10 particles may be enough. For larger or more
+    difficult problems, 100, 200, or more particles might be more
+    appropriate. <br>
+    <br>
+    <b>Inertia:</b> Generally the range is [0, 1], typically very close
+    to 1. <br>
+    <br>
+    <b>Cognition and social parameters:</b> Usually they are nearly
+    equal and typically around 2, but they can range from 0 to 4. <br>
+    <br>
+    <b>World width and world height:</b> The range in the <i>x</i> and
+    <i>y</i> directions, respectively. A good range is –50 to 50 in both
+    directions. In that case, both the world width and height would be
+    100. <br>
+    <br>
+    <b>Maximum velocity:</b> Limits how much a particle can move for a
+    given iteration. Typical values to try are 1, 2, and 10. Some
+    implementations define maximum velocity as the world width or
+    height. <br>
+    <br>
+    <br>
+    <h3>Data representation</h3>
+    It’s probably easiest to keep the <i>x</i> and <i>y</i>
+    coordinates in separate arrays/variables for position, velocity,
+    personal best, and global best. <br>
+    <br>
+    <br>
+    <h3>Initialization</h3>
+    The position of each particle should be initialized to a random
+    number in the range for each coordinate (e.g. between –50 and 50 in
+    both directions). <br>
+    <br>
+    The velocity of each particle can be initialized to 0. <br>
+    <br>
+    The personal best for each particle can be initialized to that
+    particle. <br>
+    <br>
+    The global best can be initialized to the particle with the best
+    fitness, as given by the objective functions <code>Q(p)</code>
+    (i.e. <code>Q(position)</code>). <br>
+    <br>
+    Of course, both the <i>x</i> and <i>y</i> coordinates of each of
+    these should be initialized. <br>
+    <br>
+    <br>
+    <h3>Stopping condition for main update loop</h3>
+    Keep iterating until the error in the <i>x</i> and <i>y</i>
+    coordinates drops below a certain threshold (e.g. 0.01). In case the
+    system never fully converges, a second condition should be added,
+    which is a maximum number of iterations. Both of these conditions
+    can be given in a while loop. <br>
+    <br>
+    <br>
+    <h3>Updating the particles</h3>
+    Implement the following update rules: <br>
+    <br>
+    <h4>Velocity</h4>
+    <code> velocity' = inertia * velocity + c_1 * r_1 *
+      (personal_best_position - position) + c_2 * r_2 *
+      (global_best_position - position) </code> <br>
+    <br>
+    where <code>c_1</code> is the cognition parameter, <code>c_2</code>
+    is the social parameter, and <code>r_1</code> and <code>r_2</code>
+    are random numbers in [0, 1]. <br>
+    <br>
+    The positions and velocities are actually vectors, so you would
+    implement this formula for both the <i>x</i> and the <i>y</i>
+    coordinates. <br>
+    <br>
+    The velocity needs to be scaled in order to keep it within range.
+    Otherwise, the positions will become too large and often go out of
+    bounds, and your program will behave wildly. The following is how to
+    scale the velocity:<br>
+    <br>
+    <code> if </code><code><code>velocity_x<sup>2</sup> + velocity_y<sup>2</sup></code>
+      &gt; maximum_velocity<sup>2</sup> <br>
+      &nbsp;&nbsp;velocity = (maximum_velocity/sqrt(velocity_x<sup>2</sup>
+      + velocity_y<sup>2</sup>)) * velocity </code> <br>
+    <br>
+    Again, do this for both the <i>x</i> and <i>y</i> coordinates. <br>
+    <br>
+    <h4>Position</h4>
+    <code> position' = position + velocity' </code> <br>
+    <br>
+    <h4>Personal best</h4>
+    <code> if(Q(position) &gt; Q(personal_best_position)) <br>
+      &nbsp;&nbsp;personal_best_position = position </code> <br>
+    <br>
+    <h4>Global best</h4>
+    <code> if(Q(position) &gt; Q(global_best_position)) <br>
+      &nbsp;&nbsp;global_best_position = position </code> <br>
+    <br>
+    <br>
+    <h3>Measuring performance</h3>
+    At the very least, calculate the average error in the <i>x</i> and
+    <i>y</i> coordinates of the particles. This can be done by <br>
+    <br>
+    <code> error_x += (position_x[k] - global_best_position_x)<sup>2</sup>
+      <br>
+      error_y += (position_y[k] - global_best_position_y)<sup>2</sup> </code>
+    <br>
+    <br>
+    for each particle <i>k</i>. <br>
+    <br>
+    Then <br>
+    <br>
+    <code> error_x = sqrt((1/(2*num_particles))*error_x) <br>
+      error_y = sqrt((1/(2*num_particles))*error_y) </code> <br>
+    <br>
+    This is the measure that should be included as part of your stopping
+    condition. <br>
+    <br>
+    You can plot this error over the number of iterations to get a
+    qualitative view of the performance. <br>
+    <br>
+    As mentioned in the Project 5 handout, you can also compute the
+    percentage of particles that have converged to within a small
+    distance of the global maximum. You can also plot this over the
+    number of iterations. <br>
+    <br>
+    Number of epochs until convergence is another measure of
+    performance. <br>
+    <br>
+    A purely qualitative assessment is to obtain a scatter plot of the
+    particles after the updating iterations. Below are two examples of
+    what you might see for Problem 2 (two maxima). In the first graph,
+    most of the points have converged to the global maximum, although
+    they are covered up by the global maximum point on the graph. <br>
+    <br>
+    <img src="twopeaks1.jpg">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img
+      src="twopeaks2.jpg"> <br>
+    <br>
+    The more performance measures and graphs you analyze, the higher
+    grade you can earn. <br>
+    <br>
+    <br>
+    <h3>Neighborhood (local) best (graduate part)</h3>
+    The requirement is to implement a ring topology with neighborhoods
+    given by the 2-nearest neighbors. Define a permutation of the
+    particles, where a particle’s neighbors are the array elements
+    before and after it (allow for wraparound). You can use the position
+    arrays as the permutation, where the neighbors are accessed by the
+    array indices. The topology will not change during the iterations of
+    the algorithm. That is, each particle will keep its same two
+    neighbors throughout the iterations. <br>
+    <br>
+    The velocity formula is modified as follows: <br>
+    <br>
+    <code> velocity' = inertia * velocity + c_1 * r_1 *
+      (personal_best_position - position) + c_2 * r_2 *
+      (global_best_position - position) + c_3 * r_3 *
+      (local_best_position - position) </code> <br>
+    <br>
+    The best neighbor is the particle whose <code>Q(position)</code> is
+    the largest. <br>
+    <br>
+    You can try k-nearest neighbors for extra credit. For example,
+    4-nearest neighbors are given by the 2 elements before and the 2
+    elements after the given particle. <br>
+    <br>
+    For the Euclidean distance method (extra credit), the nearest
+    neighbors of a particle are those that are within a given radius as
+    measured by Euclidean distance. The radius is another parameter that
+    can vary over a range of values. <br>
+    <br>
+    You can also try other topologies for extra credit, such as star or
+    wheel. <br>
+    <br>
+  </body>
+</html>
