@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<event category="CREATE" id="0">
+  <actions>
+    <action id="603" library="1">
+      <!--action name: Code-->
+      <kind>CODE</kind>
+      <allowRelative>false</allowRelative>
+      <question>false</question>
+      <canApplyTo>true</canApplyTo>
+      <actionType>CODE</actionType>
+      <functionName/>
+      <relative>false</relative>
+      <not>false</not>
+      <appliesTo>.self</appliesTo>
+      <arguments>
+        <argument kind="STRING">var i;
+
+//GML Exclusive! The size of each cell (width &amp; height)
+cell_size = 8;
+
+//Configure the simulator
+iterations   = 20;
+size         = 100;
+particles    = 250;
+inertia      = 0.99;
+cognition    = 0.1;
+social       = 0.1;
+max_velocity = 0.1;
+
+maximum_x = 20;
+maximum_y = 7;
+
+global_best_x = 0;
+global_best_y = 0;
+
+error_x = 0;
+error_y = 0;
+
+mdist = sqrt(2 * sqr(size)) / 2;
+
+//Create the particles
+for (i = 0; i &lt; particles; i += 1) {
+    particle[i] = instance_create(0, 0, obj_particle);
+}
+</argument>
+      </arguments>
+    </action>
+  </actions>
+</event>

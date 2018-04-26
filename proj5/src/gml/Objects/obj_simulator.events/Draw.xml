@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<event category="DRAW" id="0">
+  <actions>
+    <action id="603" library="1">
+      <!--action name: Code-->
+      <kind>CODE</kind>
+      <allowRelative>false</allowRelative>
+      <question>false</question>
+      <canApplyTo>true</canApplyTo>
+      <actionType>CODE</actionType>
+      <functionName/>
+      <relative>false</relative>
+      <not>false</not>
+      <appliesTo>.self</appliesTo>
+      <arguments>
+        <argument kind="STRING">//Draw the grid
+var i, j;
+
+draw_set_color(c_ltgray);
+for (i = -size / 2; i &lt;= size / 2; i += 1) {
+    //Horizontal Line
+    draw_line(
+        (room_width  / 2) + (cell_size * (-size / 2)),
+        (room_height / 2) + (cell_size * i),
+        (room_width  / 2) + (cell_size * ( size / 2)),
+        (room_height / 2) + (cell_size * i)
+    );
+    
+    //Vertical Line
+    draw_line(
+        (room_width  / 2) + (cell_size * i),
+        (room_height / 2) + (cell_size * (-size / 2)),
+        (room_width  / 2) + (cell_size * i),
+        (room_height / 2) + (cell_size * ( size / 2)),
+    );
+}
+
+draw_set_color(c_black);
+
+//Draw the middle border
+draw_line(room_width / 2, 0, room_width / 2, room_height);
+draw_line(0, room_height / 2, room_width, room_height / 2);
+
+//Other specs like error...
+draw_text(2, 2, "Error X: " + string(error_x) + "#Error Y: " + string(error_y));
+
+draw_set_color(c_white);
+</argument>
+      </arguments>
+    </action>
+  </actions>
+</event>
