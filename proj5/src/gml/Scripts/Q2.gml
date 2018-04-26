@@ -18,12 +18,12 @@
 var pdist, mdist, ndist;
 
 pdist = sqrt(
-    sqr(argument0 - obj_simulator.maximum_x) +
-    sqr(argument1 - obj_simulator.maximum_y)
+    sqr(argument0 - obj_simulator.p_x) +
+    sqr(argument1 - obj_simulator.p_y)
 );
 ndist = sqrt(
-    sqr(argument0 + obj_simulator.maximum_x) +
-    sqr(argument1 + obj_simulator.maximum_y)
+    sqr(argument0 + obj_simulator.p_x) +
+    sqr(argument1 + obj_simulator.p_y)
 );
 mdist = obj_simulator.mdist;
 

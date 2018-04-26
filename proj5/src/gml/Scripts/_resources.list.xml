@@ -5,4 +5,5 @@
   <resource name="gen_coord_y" type="RESOURCE"/>
   <resource name="Q1" type="RESOURCE"/>
   <resource name="Q2" type="RESOURCE"/>
+  <resource name="C1" type="RESOURCE"/>
 </resources>

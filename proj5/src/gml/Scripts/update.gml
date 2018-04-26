@@ -9,7 +9,7 @@
  *     a single step.
  */
 
-var SIM, TOTAL, RES1, RES2, RES3, i, r1, r2;
+var SIM, TOTAL, RES1, RES2, RES3, i, r1, r2, SCR;
 SIM = obj_simulator;
 
 SIM.error_x = 0;
@@ -46,9 +46,16 @@ for (i = 0; i < SIM.particles; i += 1) {
     SIM.particle[i].y += SIM.particle[i].velocity_y;
     
     //Compute with Q
-    RES1 = Q2(SIM.particle[i].x              , SIM.particle[i].y              );
-    RES2 = Q2(SIM.particle[i].personal_best_x, SIM.particle[i].personal_best_y);
-    RES3 = Q2(SIM.global_best_x              , SIM.global_best_y              );
+    //Function Pointer
+    SCR = Q1;
+    
+    //Get the values
+    RES1 = script_execute(SCR, 
+        SIM.particle[i].x, SIM.particle[i].y);
+    RES2 = script_execute(SCR,
+        SIM.particle[i].personal_best_x, SIM.particle[i].personal_best_y);
+    RES3 = script_execute(SCR,
+        SIM.global_best_x, SIM.global_best_y);
     
     //Personal Best
     if (RES1 > RES2) {

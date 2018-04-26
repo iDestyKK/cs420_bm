@@ -27,8 +27,8 @@ cognition    = 0.1;
 social       = 0.1;
 max_velocity = 0.1;
 
-maximum_x = 20;
-maximum_y = 7;
+p_x = 20;
+p_y = 7;
 
 global_best_x = 0;
 global_best_y = 0;
