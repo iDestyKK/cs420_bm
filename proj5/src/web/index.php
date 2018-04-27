@@ -28,15 +28,110 @@
 	var texture_list = {};
 	var program_list = {};
 
+	var conf = {
+		'iterations'  :  20.00,
+		'size'        : 100.00,
+		'particle_num': 250.00,
+		'inertia'     :   0.99,
+		'cognition'   :   0.10,
+		'social'      :   0.10,
+		'max_velocity':   0.10,
+		'global_best' : {
+			'x': 0,
+			'y': 0
+		},
+		'mdist': 0.0,
+		'particles': [],
+		'func': function(x, y) {
+			let pdist = Math.sqrt(
+				Math.pow(x - 20, 2) +
+				Math.pow(y -  7, 2)
+			);
+
+			return 100 * (1 - (pdist / conf.mdist));
+		},
+		'update': function() {
+			let r1, r2, pobj;
+			conf.mdist = Math.sqrt(2 * Math.pow(conf.size, 2)) / 2;
+
+			for (let i = 0; i < conf.particle_num; i++) {
+				r1 = Math.random();
+				r2 = Math.random();
+
+				pobj = conf.particles[i];
+
+				pobj.velocity.x =
+					conf.inertia * pobj.velocity.x + conf.cognition * r1 *
+					(pobj.personal_best.x - pobj.obj.x) +
+					conf.social * r2 *
+					(conf.global_best.x - pobj.obj.x);
+
+				pobj.velocity.y =
+					conf.inertia * pobj.velocity.y + conf.cognition * r1 *
+					(pobj.personal_best.y - pobj.obj.y) +
+					conf.social * r2 *
+					(conf.global_best.y - pobj.obj.y);
+
+				//Normalise
+				let TOTAL =
+					Math.pow(pobj.velocity.x, 2) +
+					Math.pow(pobj.velocity.y, 2);
+
+				if (TOTAL > conf.max_velocity) {
+					pobj.velocity.x *= (conf.max_velocity / Math.sqrt(TOTAL));
+					pobj.velocity.y *= (conf.max_velocity / Math.sqrt(TOTAL));
+				}
+
+				//Update Position
+				pobj.obj.set_position(
+					pobj.obj.x + pobj.velocity.x,
+					pobj.obj.y + pobj.velocity.y,
+					pobj.obj.z
+				);
+
+				//Compute Q stuff
+				let RES1, RES2, RES3;
+
+				RES1 = conf.func(pobj.obj.x, pobj.obj.y);
+				RES2 = conf.func(pobj.personal_best.x, pobj.personal_best.y);
+				RES3 = conf.func(conf.global_best.x, conf.global_best.y);
+
+				//Personal Best
+				if (RES1 > RES2) {
+					pobj.personal_best.x = pobj.obj.x;
+					pobj.personal_best.y = pobj.obj.y;
+				}
+
+				//Global Best
+				if (RES1 > RES3) {
+					conf.global_best.x = pobj.obj.x;
+					conf.global_best.y = pobj.obj.y;
+				}
+			}
+		}
+	};
+
 	//Floor Object gets priority
 	var floor_obj;
-
-	//Particles must also be referenced in another way
-	var particles = [];
 
 	var CN_TRIANGLE_SHADER_PROGRAM;
 	var yy = 0;
 	var angle = 0;
+
+	//Class for particles
+	class particle {
+		constructor() {
+			this.obj = undefined;
+			this.velocity = {
+				'x': 0,
+				'y': 0
+			};
+			this.personal_best = {
+				'x': 0,
+				'y': 0
+			};
+		}
+	}
 
 	function init() {
 		console.log(gl);
@@ -81,22 +176,24 @@
 		object_list.push(floor_obj);
 
 		//Make the floor span the simulation
-		floor_obj.set_scale(1000, 1000, 0);
+		floor_obj.set_scale(conf.size, conf.size, 0);
 
 		//Create a cube instance
-		for (let i = 0; i < 250; i++) {
+		for (let i = 0; i < conf.particle_num; i++) {
 			object_list.push(new CN_INSTANCE(
-				Math.random() * 100 - 50, Math.random() * 100 - 50, 0,
+				(Math.random() * conf.size) - (conf.size / 2), (Math.random() * conf.size) - (conf.size / 2), 0,
 				model_list["MDL_CRYSTAL"],
 				undefined,
 				program_list["SHADER_GENERIC"]
 			));
 
 			//Make them spikey
-			object_list[object_list.length - 1].set_scale(0.1, 0.1, 0.25);
+			object_list[object_list.length - 1].set_scale(0.25, 0.25, 0.5);
 
 			//Add them to the particles list too
-			particles.push(object_list[object_list.length - 1]);
+			let p = new particle();
+			p.obj = object_list[object_list.length - 1];
+			conf.particles.push(p);
 		}
 
 		//Start the draw event.
@@ -130,6 +227,7 @@
 		if (yy > 1)
 			yy = 0;
 
+		conf.update();
 		window.requestAnimationFrame(draw);
 	}
 

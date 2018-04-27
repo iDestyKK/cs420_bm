@@ -57,5 +57,5 @@ void main() {
 
 	//Pass on to fragment shader
 	vec_posv = vec_real;
-	gl_Position = uPMatrix * uMVMatrix * vec4(vec_real, 1.0);
+	gl_Position = uPMatrix * uMVMatrix * vec4(vec_posv, 1.0);
 }
