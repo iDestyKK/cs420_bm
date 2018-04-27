@@ -3,14 +3,20 @@ precision mediump float;
 varying vec3 frag_colour;
 varying vec3 vec_posv;
 
-float Q1() {
+float Q2() {
+	//Equation 2
 	float pdist = sqrt(pow(vec_posv.x - 20.0, 2.0) + pow(vec_posv.y - 7.0, 2.0));
+	float ndist = sqrt(pow(vec_posv.x + 20.0, 2.0) + pow(vec_posv.y + 7.0, 2.0));
 	float mdist = sqrt(2.0 * pow(100.0, 2.0)) / 2.0;
-	return 100.0 * (1.0 - (pdist / mdist));
+
+	return
+		9.0  * max(0.0, 10.0 - pow(pdist, 2.0)) +
+		10.0 * (1.0 - (pdist / mdist)) +
+		70.0 * (1.0 - (ndist / mdist));
 }
 
 void main() {
-	float val = Q1();
+	float val = Q2();
 	val /= 100.0;
 
 	//Make it so that 0.1 is the lowest that "val" can be.

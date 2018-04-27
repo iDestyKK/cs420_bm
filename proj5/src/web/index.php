@@ -14,11 +14,11 @@
 -->
 
 <?php
-//Initialise CN_GL Engine
-require_once("CN_GL/cn_gl.php");
+	//Initialise CN_GL Engine
+	require_once("CN_GL/cn_gl.php");
 
-//Initialise CN_GL
-cn_gl_init();
+	//Initialise CN_GL
+	cn_gl_init();
 ?>
 
 <script type = "text/javascript">
@@ -27,6 +27,9 @@ cn_gl_init();
 	var model_list   = {};
 	var texture_list = {};
 	var program_list = {};
+
+	//Floor Object gets priority
+	var floor_obj;
 
 	var CN_TRIANGLE_SHADER_PROGRAM;
 	var yy = 0;
@@ -46,8 +49,13 @@ cn_gl_init();
 			cn_gl_get_shader("CN_TRIANGLE_VERTEX")
 		);
 
-		program_list["SHADER_FLOOR"] = cn_gl_create_shader_program(
-			cn_gl_get_shader("CN_FLOOR_FRAGMENT"),
+		program_list["SHADER_FLOOR1"] = cn_gl_create_shader_program(
+			cn_gl_get_shader("CN_FLOOR_FRAGMENT1"),
+			cn_gl_get_shader("CN_FLOOR_VERTEX")
+		);
+
+		program_list["SHADER_FLOOR2"] = cn_gl_create_shader_program(
+			cn_gl_get_shader("CN_FLOOR_FRAGMENT2"),
 			cn_gl_get_shader("CN_FLOOR_VERTEX")
 		);
 
@@ -60,15 +68,17 @@ cn_gl_init();
 		model_list["MDL_FLOOR"  ] = new CN_MODEL("model/obj/floor.obj");
 
 		//Create the floor
-		object_list.push(new CN_INSTANCE(
+		floor_obj = new CN_INSTANCE(
 			0, 0, 0,
 			model_list["MDL_FLOOR"],
 			undefined,
-			program_list["SHADER_FLOOR"]
-		));
+			program_list["SHADER_FLOOR1"]
+		);
+
+		object_list.push(floor_obj);
 
 		//Make the floor span the simulation
-		object_list[object_list.length - 1].set_scale(1000, 1000, 0);
+		floor_obj.set_scale(1000, 1000, 0);
 
 		//Create a cube instance
 		for (let i = 0; i < 250; i++) {
@@ -153,8 +163,9 @@ cn_gl_init();
 			cn_gl_load_vertex_shader  ("CN_TRIANGLE_VERTEX"  , "shader/simple.vert");
 
 			//For the floor
-			cn_gl_load_fragment_shader("CN_FLOOR_FRAGMENT", "shader/floor.frag");
-			cn_gl_load_vertex_shader  ("CN_FLOOR_VERTEX"  , "shader/floor.vert");
+			cn_gl_load_fragment_shader("CN_FLOOR_FRAGMENT1", "shader/floor_Q1.frag");
+			cn_gl_load_fragment_shader("CN_FLOOR_FRAGMENT2", "shader/floor_Q2.frag");
+			cn_gl_load_vertex_shader  ("CN_FLOOR_VERTEX"   , "shader/floor.vert");
 		?>
 	</body>
 </html>
