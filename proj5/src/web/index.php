@@ -31,6 +31,9 @@
 	//Floor Object gets priority
 	var floor_obj;
 
+	//Particles must also be referenced in another way
+	var particles = [];
+
 	var CN_TRIANGLE_SHADER_PROGRAM;
 	var yy = 0;
 	var angle = 0;
@@ -91,6 +94,9 @@
 
 			//Make them spikey
 			object_list[object_list.length - 1].set_scale(0.1, 0.1, 0.25);
+
+			//Add them to the particles list too
+			particles.push(object_list[object_list.length - 1]);
 		}
 
 		//Start the draw event.
@@ -138,19 +144,78 @@
 		canvasID.width  = canvasID.clientWidth  * retina;
 		canvasID.height = canvasID.clientHeight * retina;
 	}
+
+	//Function to handle equation changes
+	function set_equation() {
+		let value = $("#equation")[0].value;
+
+		//Change equation depending on the value of the dropdown.
+		if (value == "Q1")
+			floor_obj.program = program_list["SHADER_FLOOR1"];
+		if (value == "Q2")
+			floor_obj.program = program_list["SHADER_FLOOR2"];
+	}
 </script>
 
 <html>
 	<head>
-		<title>CN_GL Demo: CS456 Final Project</title>
+		<title>CN_GL Demo: Particle Swarm Optimisation (COSC 420)</title>
 		<?php
 			//Call to CN_GL to include all needed JS files.
 			cn_gl_inject_js();
 		?>
 	</head>
 	<style type = "text/css">
+		/* PAGE PROPERTIES */
 		html, body {
 			margin: 0px;
+		}
+
+		/* OPTIONS */
+		.properties {
+			background-color: rgba(0, 0, 0, 0.75);
+			position        : fixed;
+			right           : 16px;
+			top             : 16px;
+			max-height      : calc(100% - 32px);
+			width           : 320px;
+			height          : 720px;
+			border          : 2px solid #444;
+			color           : #FFF;
+			box-sizing      : border-box;
+			padding         : 8px;
+		}
+
+		.properties .top {
+			width        : 100%;
+			text-align   : center;
+			font-size    : 150%;
+			border-bottom: 2px solid #444;
+			margin-bottom: 8px;
+		}
+
+		.properties span.name {
+			font-weight: bold;
+		}
+
+		.properties input[type="button"] {
+			width           : 100%;
+			background-color: transparent;
+			border          : 2px solid #FFF;
+			color           : #FFF;
+			font-size       : 100%;
+		}
+
+		.properties select {
+			width           : 100%;
+			background-color: transparent;
+			color           : #FFF;
+			font-size       : 100%;
+		}
+
+		.properties option {
+			background-color: #000;
+			color           : #FFF;
 		}
 	</style>
 	<body onload = "cn_gl_init_gl('glCanvas', init)">
@@ -167,5 +232,46 @@
 			cn_gl_load_fragment_shader("CN_FLOOR_FRAGMENT2", "shader/floor_Q2.frag");
 			cn_gl_load_vertex_shader  ("CN_FLOOR_VERTEX"   , "shader/floor.vert");
 		?>
+
+		<!-- Normal HTML Elements -->
+		<div class = "properties">
+			<div class = "top">
+				Properties
+			</div>
+
+			
+			<input type = "button"
+				   value = "Reset"
+				   onclick = "javascript:reset_sim();"
+			>
+			</br>
+			</br>
+
+			<table width = "100%" style = "color: inherit;">
+				<tr>
+					<td>
+						<span class = "name">
+							Equation:
+						</span>
+					</td>
+					<!--<td>
+						<input type = "button"
+							   value = "Q1"
+							   onclick = "javascript:floor_obj.program = program_list['SHADER_FLOOR1'];"
+						>
+					</td>
+					<td>
+						<input type = "button"
+							   value = "Q2"
+							   onclick = "javascript:floor_obj.program = program_list['SHADER_FLOOR2'];"
+						>
+					</td>-->
+					<td>
+						<select id = "equation" onchange = "set_equation();">
+							<option value = "Q1">Q1</option>
+							<option value = "Q2">Q2</option>
+						</select>
+					</td>
+		</div>
 	</body>
 </html>
