@@ -46,17 +46,34 @@ cn_gl_init();
 			cn_gl_get_shader("CN_TRIANGLE_VERTEX")
 		);
 
+		program_list["SHADER_FLOOR"] = cn_gl_create_shader_program(
+			cn_gl_get_shader("CN_FLOOR_FRAGMENT"),
+			cn_gl_get_shader("CN_FLOOR_VERTEX")
+		);
+
 		//Create a camera
 		camera = new CN_CAMERA();
 		camera.set_projection_ext(2, 2, 2, 0, 0, 0, 0, 0, 1, 75, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 4096.0);
 
 		//Load a cube model
 		model_list["MDL_CRYSTAL"] = new CN_MODEL("model/obj/crystal.obj");
+		model_list["MDL_FLOOR"  ] = new CN_MODEL("model/obj/floor.obj");
+
+		//Create the floor
+		object_list.push(new CN_INSTANCE(
+			0, 0, 0,
+			model_list["MDL_FLOOR"],
+			undefined,
+			program_list["SHADER_FLOOR"]
+		));
+
+		//Make the floor span the simulation
+		object_list[object_list.length - 1].set_scale(1000, 1000, 0);
 
 		//Create a cube instance
-		for (let i = 0; i < 50; i++) {
+		for (let i = 0; i < 250; i++) {
 			object_list.push(new CN_INSTANCE(
-				Math.random() * 10 - 5, Math.random() * 10 - 5, 0,
+				Math.random() * 100 - 50, Math.random() * 100 - 50, 0,
 				model_list["MDL_CRYSTAL"],
 				undefined,
 				program_list["SHADER_GENERIC"]
@@ -76,8 +93,8 @@ cn_gl_init();
 
 		gl.clear(gl.CLEAR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-		camera.set_projection_ext(Math.cos(angle) * 2, -Math.sin(angle) * 2, 2, 0, 0, 0, 0, 0, 1, 75, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 4096.0);
-		angle += 0.01;
+		camera.set_projection_ext(Math.cos(angle) * 15, -Math.sin(angle) * 15, 15, 0, 0, 0, 0, 0, 1, 75, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 4096.0);
+		angle += 0.0025;
 
 		//Draw every particle
 		var prev_program = null;
@@ -133,7 +150,11 @@ cn_gl_init();
 
 			//CN Generic Shaders for "draw_shapes"
 			cn_gl_load_fragment_shader("CN_TRIANGLE_FRAGMENT", "shader/simple.frag");
-			cn_gl_load_vertex_shader  ("CN_TRIANGLE_VERTEX", "shader/simple.vert");
+			cn_gl_load_vertex_shader  ("CN_TRIANGLE_VERTEX"  , "shader/simple.vert");
+
+			//For the floor
+			cn_gl_load_fragment_shader("CN_FLOOR_FRAGMENT", "shader/floor.frag");
+			cn_gl_load_vertex_shader  ("CN_FLOOR_VERTEX"  , "shader/floor.vert");
 		?>
 	</body>
 </html>
