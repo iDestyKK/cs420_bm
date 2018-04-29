@@ -49,7 +49,6 @@
 		'cognition'       :   0.10, /* Ditto...                           */
 		'social'          :   0.10, /* Ditto...                           */
 		'max_velocity'    :   0.20, /* Maximum Velocity a particle can go */
-		'export_data'     : [],     /* Object to hold export data         */
 		'global_best'     : {
 			'x': 0,
 			'y': 0
@@ -81,9 +80,6 @@
 			return (9.0 * Math.max(0, 10.0 - Math.pow(pdist, 2))) +
 				(10.0 * (1.0 - (pdist / conf.mdist))) +
 				(70.0 * (1.0 - (ndist / conf.mdist)));
-		},
-		'Q3': function(x, y) {
-			return Math.cos(Math.sqrt(Math.abs(Math.pow(x, 2) + Math.pow(y, 2) + Math.sin(10.0 - x)))) * Math.sqrt(Math.abs(Math.pow(x, 2) + Math.pow(y, 2)));
 		},
 		'func': function(x, y) { return 0; },
 		'update': function() {
@@ -164,23 +160,6 @@
 			//Normalise
 			conf.error.x *= Math.sqrt(1 / (2 * conf.particle_num));
 			conf.error.y *= Math.sqrt(1 / (2 * conf.particle_num));
-
-			//Push data into new object for CSV Export
-			if (conf.iteration < conf.iterations) {
-				conf.export_data.push({
-					'iteration': conf.iteration + 1,
-					'error_x'  : conf.error.x,
-					'error_y'  : conf.error.y,
-					'gbest_x'  : conf.global_best.x,
-					'gbest_y'  : conf.global_best.y
-				});
-
-				//Update the simulation string
-				document.getElementById("status_str").innerHTML =
-					"Simulation Status: " + (conf.iteration + 1) + "/" + conf.iterations;
-			}
-
-			conf.iteration++;
 		}
 	};
 
@@ -213,21 +192,18 @@
 		let GRID = document.getElementsByClassName("grid")[0];
 		GRID.innerHTML = "";
 
-		conf.size         = document.getElementById("grid_size"     ).value;
-		conf.particle_num = document.getElementById("particles"     ).value;
-		conf.inertia      = document.getElementById("inertia"       ).value;
-		conf.cognition    = document.getElementById("cognition"     ).value;
-		conf.social       = document.getElementById("social"        ).value;
-		conf.max_velocity = document.getElementById("max_velocity"  ).value;
-		conf.iterations   = document.getElementById("max_iterations").value;
-		conf.iteration    = 0;
+		conf.size         = document.getElementById("grid_size"   ).value;
+		conf.particle_num = document.getElementById("particles"   ).value;
+		conf.inertia      = document.getElementById("inertia"     ).value;
+		conf.cognition    = document.getElementById("cognition"   ).value;
+		conf.social       = document.getElementById("social"      ).value;
+		conf.max_velocity = document.getElementById("max_velocity").value;
 
 		conf.global_best.x = 0;
 		conf.global_best.y = 0;
 
 		object_list           = [];
 		conf.particles        = [];
-		conf.export_data      = [];
 		conf.particle_num_old = conf.particle_num;
 
 		//Create the floor
@@ -293,11 +269,6 @@
 
 		program_list["SHADER_FLOOR2"] = cn_gl_create_shader_program(
 			cn_gl_get_shader("CN_FLOOR_FRAGMENT2"),
-			cn_gl_get_shader("CN_FLOOR_VERTEX")
-		);
-
-		program_list["SHADER_FLOOR3"] = cn_gl_create_shader_program(
-			cn_gl_get_shader("CN_FLOOR_FRAGMENT3"),
 			cn_gl_get_shader("CN_FLOOR_VERTEX")
 		);
 
@@ -417,10 +388,6 @@
 			floor_obj.program = program_list["SHADER_FLOOR2"];
 			conf.func = conf.Q2;
 		}
-		if (value == "Q3") {
-			floor_obj.program = program_list["SHADER_FLOOR3"];
-			conf.func = conf.Q3;
-		}
 	}
 
 	function mouse_rotate(e) {
@@ -486,35 +453,6 @@
 	document.addEventListener("keyup", function(event) {
 		key_pressed(event, false);
 	});
-
-
-	//Function to export data of the simulation to a file
-	function export_csv() {
-		//Generate string of data
-		let data = "";
-
-		//Top Row
-		data = "\"Epoch\",\"Error X\",\"Error Y\",\"Global Best X\",\"Global Best Y\"\n";
-
-		//Generate the other rows
-		for (let i = 0; i < conf.export_data.length; i++) {
-			data += conf.export_data[i].iteration + "," +
-				conf.export_data[i].error_x + "," +
-				conf.export_data[i].error_y + "," +
-				conf.export_data[i].gbest_x + "," +
-				conf.export_data[i].gbest_y + "\n";
-		}
-
-		//Force a download of the CSV
-		var a = document.createElement("a");
-		a.setAttribute("style", "display: none;");
-		document.body.appendChild(a);
-		var blob = new Blob([data], { type: 'text/csv' });
-		var url  = window.URL.createObjectURL(blob);
-		a.href = url;
-		a.download = "run.csv";
-		a.click();
-	}
 </script>
 
 <html>
@@ -535,10 +473,11 @@
 		.properties {
 			background-color: rgba(0, 0, 0, 0.75);
 			position        : fixed;
-			right           : 0px;
-			top             : 0px;
+			right           : 16px;
+			top             : 16px;
+			max-height      : calc(100% - 32px);
 			width           : 320px;
-			height          : 100%;
+			height          : 800px;
 			border          : 2px solid #444;
 			color           : #FFF;
 			box-sizing      : border-box;
@@ -641,12 +580,6 @@
 			left  : 50%;
 			width : 1px;
 		}
-
-		.properties .scrollmenu {
-			position: relative;
-			height  : calc(100% - 598px);
-			overflow-y: auto;
-		}
 	</style>
 	<body onload = "cn_gl_init_gl('glCanvas', init)">
 		<?php
@@ -660,7 +593,6 @@
 			//For the floor
 			cn_gl_load_fragment_shader("CN_FLOOR_FRAGMENT1", "shader/floor_Q1.frag");
 			cn_gl_load_fragment_shader("CN_FLOOR_FRAGMENT2", "shader/floor_Q2.frag");
-			cn_gl_load_fragment_shader("CN_FLOOR_FRAGMENT3", "shader/floor_Q3.frag");
 			cn_gl_load_vertex_shader  ("CN_FLOOR_VERTEX"   , "shader/floor.vert");
 		?>
 
@@ -679,124 +611,100 @@
 			</br>
 			</br>
 
-			<div class = "scrollmenu">
-				<table width = "100%" style = "color: inherit;">
-					<!-- Equation -->
-					<tr>
-						<td>
-							<span class = "name">
-								Equation:
-							</span>
-						</td>
-						<td width = "100%">
-							<select id = "equation">
-								<option value = "Q1">Q1</option>
-								<option value = "Q2">Q2</option>
-								<option value = "Q3">Q3</option>
-							</select>
-						</td>
-					</tr>
+			<table width = "100%" style = "color: inherit;">
+				<!-- Equation -->
+				<tr>
+					<td>
+						<span class = "name">
+							Equation:
+						</span>
+					</td>
+					<td width = "100%">
+						<select id = "equation">
+							<option value = "Q1">Q1</option>
+							<option value = "Q2">Q2</option>
+						</select>
+					</td>
+				</tr>
 
-					<!-- Grid Size -->
-					<tr>
-						<td>
-							<span class = "name">
-								Grid Size:
-							</span>
-						</td>
-						<td width = "100%">
-							<input type = "value" id = "grid_size" value = "100">
-						</td>
-					</tr>
+				<!-- Grid Size -->
+				<tr>
+					<td>
+						<span class = "name">
+							Grid Size:
+						</span>
+					</td>
+					<td width = "100%">
+						<input type = "value" id = "grid_size" value = "100">
+					</td>
+				</tr>
 
-					<!-- Particles -->
-					<tr>
-						<td>
-							<span class = "name">
-								Particles:
-							</span>
-						</td>
-						<td width = "100%">
-							<input type = "value" id = "particles" value = "50">
-						</td>
-					</tr>
+				<!-- Particles -->
+				<tr>
+					<td>
+						<span class = "name">
+							Particles:
+						</span>
+					</td>
+					<td width = "100%">
+						<input type = "value" id = "particles" value = "50">
+					</td>
+				</tr>
 
-					<!-- Inertia -->
-					<tr>
-						<td>
-							<span class = "name">
-								Inertia:
-							</span>
-						</td>
-						<td width = "100%">
-							<input type = "value" id = "inertia" value = "0.99">
-						</td>
-					</tr>
+				<!-- Inertia -->
+				<tr>
+					<td>
+						<span class = "name">
+							Inertia:
+						</span>
+					</td>
+					<td width = "100%">
+						<input type = "value" id = "inertia" value = "0.99">
+					</td>
+				</tr>
 
-					<!-- Cognition -->
-					<tr>
-						<td>
-							<span class = "name">
-								Cognition:
-							</span>
-						</td>
-						<td width = "100%">
-							<input type = "value" id = "cognition" value = "0.10">
-						</td>
-					</tr>
+				<!-- Cognition -->
+				<tr>
+					<td>
+						<span class = "name">
+							Cognition:
+						</span>
+					</td>
+					<td width = "100%">
+						<input type = "value" id = "cognition" value = "0.10">
+					</td>
+				</tr>
 
-					<!-- Social -->
-					<tr>
-						<td>
-							<span class = "name">
-								Social:
-							</span>
-						</td>
-						<td width = "100%">
-							<input type = "value" id = "social" value = "0.10">
-						</td>
-					</tr>
+				<!-- Social -->
+				<tr>
+					<td>
+						<span class = "name">
+							Social:
+						</span>
+					</td>
+					<td width = "100%">
+						<input type = "value" id = "social" value = "0.10">
+					</td>
+				</tr>
 
-					<!-- Max Velocity -->
-					<tr>
-						<td>
-							<span class = "name">
-								Max Velocity:
-							</span>
-						</td>
-						<td width = "100%">
-							<input type = "value" id = "max_velocity" value = "0.10">
-						</td>
-					</tr>
-
-					<!-- Max Iterations -->
-					<tr>
-						<td>
-							<span class = "name">
-								Max Iterations:
-							</span>
-						</td>
-						<td width = "100%">
-							<input type = "value" id = "max_iterations" value = "100">
-						</td>
-					</tr>
-				</table>
-			</div>
+				<!-- Max Velocity -->
+				<tr>
+					<td>
+						<span class = "name">
+							Max Velocity:
+						</span>
+					</td>
+					<td width = "100%">
+						<input type = "value" id = "max_velocity" value = "0.10">
+					</td>
+				</tr>
+			</table>
 			</br>
-
-			<!-- Simulation Status -->
-			<p id = "status_str">Simulation Status: </p>
 
 			<!-- Button to run simulation with the current config set -->
 			<input type = "button"
 				   value = "Run Simulation!"
 				   onclick = "javascript:reset_sim();"
-			>
-
-			<!-- Button to export simulation data as CSV -->
-			<input type = "button"
-				   value = "Export CSV"
-				   onclick = "javascript:export_csv();"
 			>
 
 			<div class = "bottom">
