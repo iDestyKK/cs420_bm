@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<event category="CREATE" id="0">
+  <actions>
+    <action id="603" library="1">
+      <!--action name: Code-->
+      <kind>CODE</kind>
+      <allowRelative>false</allowRelative>
+      <question>false</question>
+      <canApplyTo>true</canApplyTo>
+      <actionType>CODE</actionType>
+      <functionName/>
+      <relative>false</relative>
+      <not>false</not>
+      <appliesTo>.self</appliesTo>
+      <arguments>
+        <argument kind="STRING">//Randomly scatter
+x = -(obj_simulator.size / 2) + random(obj_simulator.size);
+y = -(obj_simulator.size / 2) + random(obj_simulator.size);
+
+velocity_x = 0;
+velocity_y = 0;
+
+personal_best_x = 0;
+personal_best_y = 0;
+</argument>
+      </arguments>
+    </action>
+  </actions>
+</event>

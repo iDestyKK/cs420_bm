@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<resources>
+  <resource name="update" type="RESOURCE"/>
+  <resource name="gen_coord_x" type="RESOURCE"/>
+  <resource name="gen_coord_y" type="RESOURCE"/>
+  <resource name="Q1" type="RESOURCE"/>
+  <resource name="Q2" type="RESOURCE"/>
+  <resource name="C1" type="RESOURCE"/>
+</resources>
