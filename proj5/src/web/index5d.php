@@ -52,46 +52,37 @@
 		'export_data'     : [],     /* Object to hold export data         */
 		'global_best'     : {
 			'x': 0,
-			'y': 0
+			'y': 0,
+			'z': 0,
+			'w': 0
 		},
 		'error'           : {
 			'x': 0,
-			'y': 0
+			'y': 0,
+			'z': 0,
+			'w': 0
 		},
 		'mdist': 0.0,
 		'particles': [],
-		'Q1': function(x, y) {
+		'Q1': function(x, y, z, w) {
 			let pdist = Math.sqrt(
 				Math.pow(x - 20, 2) +
-				Math.pow(y -  7, 2)
+				Math.pow(y -  7, 2) +
+				Math.pow(z -  7, 2) +
+				Math.pow(w + 12, 2)
 			);
 
 			return 100 * (1 - (pdist / conf.mdist));
 		},
-		'Q2': function(x, y) {
-			let pdist = Math.sqrt(
-				Math.pow(x - 20, 2) +
-				Math.pow(y -  7, 2)
-			);
-			let ndist = Math.sqrt(
-				Math.pow(x + 20, 2) +
-				Math.pow(y +  7, 2)
-			);
-
-			return (9.0 * Math.max(0, 10.0 - Math.pow(pdist, 2))) +
-				(10.0 * (1.0 - (pdist / conf.mdist))) +
-				(70.0 * (1.0 - (ndist / conf.mdist)));
-		},
-		'Q3': function(x, y) {
-			return Math.cos(Math.sqrt(Math.abs(Math.pow(x, 2) + Math.pow(y, 2) + Math.sin(10.0 - x)))) * Math.sqrt(Math.abs(Math.pow(x, 2) + Math.pow(y, 2)));
-		},
-		'func': function(x, y) { return 0; },
+		'func': function(x, y, z, w) { return 0; },
 		'update': function() {
 			let r1, r2, pobj;
-			conf.mdist = Math.sqrt(2 * Math.pow(conf.size, 2)) / 2;
+			conf.mdist = Math.sqrt(3 * Math.pow(conf.size, 2)) / 2;
 
 			conf.error.x = 0;
 			conf.error.y = 0;
+			conf.error.z = 0;
+			conf.error.w = 0;
 
 			for (let i = 0; i < conf.particle_num_old; i++) {
 				r1 = Math.random();
@@ -111,22 +102,40 @@
 					conf.social * r2 *
 					(conf.global_best.y - pobj.obj.y);
 
+				pobj.velocity.z =
+					conf.inertia * pobj.velocity.z + conf.cognition * r1 *
+					(pobj.personal_best.z - pobj.obj.z) +
+					conf.social * r2 *
+					(conf.global_best.z - pobj.obj.z);
+
+				pobj.velocity.w =
+					conf.inertia * pobj.velocity.w + conf.cognition * r1 *
+					(pobj.personal_best.w - pobj.obj.w) +
+					conf.social * r2 *
+					(conf.global_best.w - pobj.obj.w);
+
 				//Normalise
-				let TOTAL =
-					Math.pow(pobj.velocity.x, 2) +
-					Math.pow(pobj.velocity.y, 2);
+				let TOTAL = Math.pow(pobj.velocity.x, 2) +
+					Math.pow(pobj.velocity.y, 2) +
+					Math.pow(pobj.velocity.z, 2) +
+					Math.pow(pobj.velocity.w, 2);
 
 				if (TOTAL > Math.pow(conf.max_velocity, 2)) {
 					pobj.velocity.x *= (conf.max_velocity / Math.sqrt(TOTAL));
 					pobj.velocity.y *= (conf.max_velocity / Math.sqrt(TOTAL));
+					pobj.velocity.z *= (conf.max_velocity / Math.sqrt(TOTAL));
+					pobj.velocity.w *= (conf.max_velocity / Math.sqrt(TOTAL));
 				}
 
 				//Update Position
 				pobj.obj.set_position(
 					pobj.obj.x + pobj.velocity.x,
 					pobj.obj.y + pobj.velocity.y,
-					pobj.obj.z
+					pobj.obj.z + pobj.velocity.z
 				);
+
+				//Since CN_GL only supports X, Y, and Z, we have to manually do W.
+				pobj.obj.w += pobj.velocity.w;
 
 				if (pobj.html_unloaded == true) {
 					pobj.html_elem = document.getElementById(pobj.html_elem);
@@ -140,30 +149,38 @@
 				//Compute Q stuff
 				let RES1, RES2, RES3;
 
-				RES1 = conf.func(pobj.obj.x, pobj.obj.y);
-				RES2 = conf.func(pobj.personal_best.x, pobj.personal_best.y);
-				RES3 = conf.func(conf.global_best.x, conf.global_best.y);
+				RES1 = conf.func(pobj.obj.x, pobj.obj.y, pobj.obj.z, pobj.obj.w);
+				RES2 = conf.func(pobj.personal_best.x, pobj.personal_best.y, pobj.personal_best.z, pobj.personal_best.w);
+				RES3 = conf.func(conf.global_best.x, conf.global_best.y, conf.global_best.z, conf.global_best.w);
 
 				//Personal Best
 				if (RES1 > RES2) {
 					pobj.personal_best.x = pobj.obj.x;
 					pobj.personal_best.y = pobj.obj.y;
+					pobj.personal_best.z = pobj.obj.z;
+					pobj.personal_best.w = pobj.obj.w;
 				}
 
 				//Global Best
 				if (RES1 > RES3) {
 					conf.global_best.x = pobj.obj.x;
 					conf.global_best.y = pobj.obj.y;
+					conf.global_best.z = pobj.obj.z;
+					conf.global_best.w = pobj.obj.w;
 				}
 
 				//Update the error
 				conf.error.x += Math.pow(pobj.obj.x - conf.global_best.x, 2);
 				conf.error.y += Math.pow(pobj.obj.y - conf.global_best.y, 2);
+				conf.error.z += Math.pow(pobj.obj.z - conf.global_best.z, 2);
+				conf.error.w += Math.pow(pobj.obj.w - conf.global_best.w, 2);
 			}
 
 			//Normalise
 			conf.error.x *= Math.sqrt(1 / (2 * conf.particle_num));
 			conf.error.y *= Math.sqrt(1 / (2 * conf.particle_num));
+			conf.error.z *= Math.sqrt(1 / (2 * conf.particle_num));
+			conf.error.w *= Math.sqrt(1 / (2 * conf.particle_num));
 
 			//Push data into new object for CSV Export
 			if (conf.iteration < conf.iterations) {
@@ -171,8 +188,12 @@
 					'iteration': conf.iteration + 1,
 					'error_x'  : conf.error.x,
 					'error_y'  : conf.error.y,
+					'error_z'  : conf.error.z,
+					'error_w'  : conf.error.w,
 					'gbest_x'  : conf.global_best.x,
-					'gbest_y'  : conf.global_best.y
+					'gbest_y'  : conf.global_best.y,
+					'gbest_z'  : conf.global_best.z,
+					'gbest_w'  : conf.global_best.w
 				});
 
 				//Update the simulation string
@@ -200,11 +221,15 @@
 			this.html_elem = undefined;
 			this.velocity = {
 				'x': 0,
-				'y': 0
+				'y': 0,
+				'z': 0,
+				'w': 0
 			};
 			this.personal_best = {
 				'x': 0,
-				'y': 0
+				'y': 0,
+				'z': 0,
+				'w': 0
 			};
 		}
 	}
@@ -224,6 +249,7 @@
 
 		conf.global_best.x = 0;
 		conf.global_best.y = 0;
+		conf.global_best.z = 0;
 
 		object_list           = [];
 		conf.particles        = [];
@@ -250,11 +276,16 @@
 		//Create a cube instance
 		for (let i = 0; i < conf.particle_num; i++) {
 			object_list.push(new CN_INSTANCE(
-				(Math.random() * conf.size) - (conf.size / 2), (Math.random() * conf.size) - (conf.size / 2), 0,
+				(Math.random() * conf.size) - (conf.size / 2),
+				(Math.random() * conf.size) - (conf.size / 2), 
+				(Math.random() * conf.size) - (conf.size / 2), 
 				model_list["MDL_CRYSTAL"],
 				undefined,
 				program_list["SHADER_GENERIC"]
 			));
+
+			//Set the W coordinate... manually
+			object_list[object_list.length - 1].w = (Math.random() * conf.size) - (conf.size / 2);
 
 			//Make them spikey
 			object_list[object_list.length - 1].set_scale(0.25, 0.25, 0.5);
@@ -306,7 +337,7 @@
 		camera.set_projection_ext(2, 2, 2, 0, 0, 0, 0, 0, 1, 75, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 4096.0);
 
 		//Load a cube model
-		model_list["MDL_CRYSTAL"] = new CN_MODEL("model/obj/crystal.obj");
+		model_list["MDL_CRYSTAL"] = new CN_MODEL("model/obj/crystal_full.obj");
 		model_list["MDL_FLOOR"  ] = new CN_MODEL("model/obj/floor.obj");
 
 		reset_sim();
@@ -494,15 +525,20 @@
 		let data = "";
 
 		//Top Row
-		data = "\"Epoch\",\"Error X\",\"Error Y\",\"Global Best X\",\"Global Best Y\"\n";
+		data = "\"Epoch\",\"Error X\",\"Error Y\",\"Error Z\",\"Error W\"," +
+			"\"Global Best X\",\"Global Best Y\",\"Global Best Z\",\"Global Best W\"\n";
 
 		//Generate the other rows
 		for (let i = 0; i < conf.export_data.length; i++) {
 			data += conf.export_data[i].iteration + "," +
 				conf.export_data[i].error_x + "," +
 				conf.export_data[i].error_y + "," +
+				conf.export_data[i].error_z + "," +
+				conf.export_data[i].error_w + "," +
 				conf.export_data[i].gbest_x + "," +
-				conf.export_data[i].gbest_y + "\n";
+				conf.export_data[i].gbest_y + "," +
+				conf.export_data[i].gbest_z + "," +
+				conf.export_data[i].gbest_w + "\n";
 		}
 
 		//Force a download of the CSV
